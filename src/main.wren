@@ -14,7 +14,6 @@ class AppFont {
 
   static load() {
     Font.load(small, "fonts/pixelmix.ttf", 8)
-    Font.load(smallBold, "fonts/pixelmix_bold.ttf", 8)
     Canvas.font = small
   }
 }
@@ -173,7 +172,7 @@ class Main {
   construct new() { }
   
   init() {
-    Window.title = "PKMDL Previewer"
+    Window.title = "PKMDL Previewer v0.1"
     AppFont.load()
     _updateCounter = -1
     _reloadButton = Button.new(10, 220, "RELOAD")
