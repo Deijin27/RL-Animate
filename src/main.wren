@@ -84,6 +84,8 @@ class AnimationDisplay {
     _type = type
     _direction = direction
     _orientation = orientation
+    _asymmetrical = asymmetrical
+    _longAttack = longAttack
     _spriteStore = spriteStore
     _x = 0
     _y = 0
@@ -101,13 +103,15 @@ class AnimationDisplay {
       _y = _y + 0
     } else if (type == AnimationType.sleep) {
       _x = _x + 3
-      if (_direction == AnimationDirection.right) {
-        _y = _y - 6
+      if (!_asymmetrical) {
+        _y = _y - 4
       }
     }
 
     if (orientation == AnimationOrientation.back) {
-      _y = _y + (type == AnimationType.attack ? 4 : 0)
+      if (type == AnimationType.attack) {
+        _y = _y + (longAttack ? 8 : 4)
+      }
     }
 
     if (direction == AnimationDirection.right) {
@@ -218,7 +222,7 @@ class Main {
         for (ori in AnimationOrientation.all) {
           var disp = AnimationDisplay.new(x, y)
           _animationDisplays.add(disp)
-          disp.init(_spriteStore, _animLibCollection.library, typ, dir, ori, true, false)
+          disp.init(_spriteStore, _animLibCollection.library, typ, dir, ori, _animLibCollection.asymmetrical, _animLibCollection.longAttack)
           x = x + 50
         }
       }
@@ -248,6 +252,8 @@ class Main {
       for (disp in _animationDisplays) {
         disp.draw(dt)
       }
+      Canvas.print("ASYMMETRICAL: %(_animLibCollection.asymmetrical)", 210, 10, Color.white)
+      Canvas.print("LONG_ATTACK: %(_animLibCollection.longAttack)", 210, 25, Color.white)
     } else if (_state == State.filesMissing) {
       Canvas.print("Files Missing. Place an animation file, \nand a sprite sheet in the folder next\n to the application", 50, 50, AppColor.foreground)
     }

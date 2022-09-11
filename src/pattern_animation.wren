@@ -106,6 +106,8 @@ class LibraryPatternAnimations {
 class LibraryPatternAnimationCollection {
   library { _library }
   libraryRaw { _libraryRaw }
+  longAttack { _longAttack }
+  asymmetrical { _asymmetrical }
   
   construct new(text) {
     var doc = XDocument.parse(text)
@@ -114,6 +116,12 @@ class LibraryPatternAnimationCollection {
     _library = LibraryPatternAnimations.new(nonRawEl)
     var rawEl = root.element("library_raw_pattern_animations")
     _libraryRaw = LibraryPatternAnimations.new(rawEl)
+
+    var laAttr = root.attribute("long_attack")
+    _longAttack = laAttr != null && laAttr.value == "true"
+
+    var asymAttr = root.attribute("asymmetrical")
+    _asymmetrical = asymAttr != null && asymAttr.value == "true"
   }
 
   populateLibraryRawTextures() {
