@@ -12,3 +12,7 @@ Preview sprite animations exported by RanseiLink
 
 
 ![screenshot](https://user-images.githubusercontent.com/40903783/189527807-3fd42418-f0b7-42dc-92ba-8a74cc4fa6f6.gif)
+
+---
+
+Made with [DOME](https://domeengine.com/)
