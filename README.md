@@ -15,4 +15,4 @@ Preview sprite animations exported by RanseiLink
 
 ---
 
-Made with [DOME](https://domeengine.com/)
+[![DOME](https://img.shields.io/badge/made%20with-DOME-8d3cff)](https://domeengine.com/)
