@@ -1,0 +1,171 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<library_collection long_attack="false" asymmetrical="false">
+  <library_pattern_animations>
+    <pattern_animation name="POKEMON133_FN_A" num_frames="48">
+      <track material="samplemap_MatLib" unknown="1">
+        <key_frame frame="0" texture="base_fix_00" palette="base_fix_f_pl" />
+        <key_frame frame="12" texture="base_fix_01" palette="base_fix_f_pl" />
+        <key_frame frame="18" texture="base_fix_02" palette="base_fix_f_pl" />
+        <key_frame frame="24" texture="base_fix_03" palette="base_fix_f_pl" />
+        <key_frame frame="36" texture="base_fix_02" palette="base_fix_f_pl" />
+        <key_frame frame="42" texture="base_fix_01" palette="base_fix_f_pl" />
+      </track>
+    </pattern_animation>
+    <pattern_animation name="POKEMON133_BN_A" num_frames="48">
+      <track material="samplemap_MatLib" unknown="1">
+        <key_frame frame="0" texture="base_fix_04" palette="base_fix_b_pl" />
+        <key_frame frame="12" texture="base_fix_05" palette="base_fix_b_pl" />
+        <key_frame frame="18" texture="base_fix_06" palette="base_fix_b_pl" />
+        <key_frame frame="24" texture="base_fix_07" palette="base_fix_b_pl" />
+        <key_frame frame="36" texture="base_fix_06" palette="base_fix_b_pl" />
+        <key_frame frame="42" texture="base_fix_05" palette="base_fix_b_pl" />
+      </track>
+    </pattern_animation>
+    <pattern_animation name="POKEMON133_FN_B" num_frames="42">
+      <track material="samplemap_MatLib" unknown="1.1425781">
+        <key_frame frame="0" texture="base_fix_13" palette="base_fix_f_pl" />
+        <key_frame frame="6" texture="base_fix_12" palette="base_fix_f_pl" />
+        <key_frame frame="24" texture="base_fix_13" palette="base_fix_f_pl" />
+        <key_frame frame="27" texture="base_fix_14" palette="base_fix_f_pl" />
+        <key_frame frame="30" texture="base_fix_15" palette="base_fix_f_pl" />
+        <key_frame frame="36" texture="base_fix_14" palette="base_fix_f_pl" />
+      </track>
+    </pattern_animation>
+    <pattern_animation name="POKEMON133_BN_B" num_frames="42">
+      <track material="samplemap_MatLib" unknown="1.1425781">
+        <key_frame frame="0" texture="base_fix_13" palette="base_fix_f_pl" />
+        <key_frame frame="6" texture="base_fix_12" palette="base_fix_f_pl" />
+        <key_frame frame="24" texture="base_fix_13" palette="base_fix_f_pl" />
+        <key_frame frame="27" texture="base_fix_14" palette="base_fix_f_pl" />
+        <key_frame frame="30" texture="base_fix_15" palette="base_fix_f_pl" />
+        <key_frame frame="36" texture="base_fix_14" palette="base_fix_f_pl" />
+      </track>
+    </pattern_animation>
+    <pattern_animation name="POKEMON133_FN_C" num_frames="72">
+      <track material="samplemap_MatLib" unknown="0.6660156">
+        <key_frame frame="0" texture="base_fix_00" palette="base_fix_f_pl" />
+        <key_frame frame="12" texture="base_fix_01" palette="base_fix_f_pl" />
+        <key_frame frame="24" texture="base_fix_02" palette="base_fix_f_pl" />
+        <key_frame frame="36" texture="base_fix_03" palette="base_fix_f_pl" />
+        <key_frame frame="48" texture="base_fix_02" palette="base_fix_f_pl" />
+        <key_frame frame="60" texture="base_fix_01" palette="base_fix_f_pl" />
+      </track>
+    </pattern_animation>
+    <pattern_animation name="POKEMON133_BN_C" num_frames="72">
+      <track material="samplemap_MatLib" unknown="0.6660156">
+        <key_frame frame="0" texture="base_fix_04" palette="base_fix_b_pl" />
+        <key_frame frame="12" texture="base_fix_05" palette="base_fix_b_pl" />
+        <key_frame frame="24" texture="base_fix_06" palette="base_fix_b_pl" />
+        <key_frame frame="36" texture="base_fix_07" palette="base_fix_b_pl" />
+        <key_frame frame="48" texture="base_fix_06" palette="base_fix_b_pl" />
+        <key_frame frame="60" texture="base_fix_05" palette="base_fix_b_pl" />
+      </track>
+    </pattern_animation>
+    <pattern_animation name="POKEMON133_FN_D" num_frames="42">
+      <track material="samplemap_MatLib" unknown="1.3320312">
+        <key_frame frame="0" texture="base_fix_12" palette="base_fix_f_pl" />
+        <key_frame frame="1" texture="base_fix_13" palette="base_fix_f_pl" />
+        <key_frame frame="2" texture="base_fix_14" palette="base_fix_f_pl" />
+        <key_frame frame="5" texture="base_fix_15" palette="base_fix_f_pl" />
+        <key_frame frame="23" texture="base_fix_14" palette="base_fix_f_pl" />
+        <key_frame frame="29" texture="base_fix_13" palette="base_fix_f_pl" />
+        <key_frame frame="35" texture="base_fix_12" palette="base_fix_f_pl" />
+      </track>
+    </pattern_animation>
+    <pattern_animation name="POKEMON133_BN_D" num_frames="42">
+      <track material="samplemap_MatLib" unknown="1.3320312">
+        <key_frame frame="0" texture="base_fix_16" palette="base_fix_b_pl" />
+        <key_frame frame="1" texture="base_fix_17" palette="base_fix_b_pl" />
+        <key_frame frame="2" texture="base_fix_18" palette="base_fix_b_pl" />
+        <key_frame frame="5" texture="base_fix_19" palette="base_fix_b_pl" />
+        <key_frame frame="23" texture="base_fix_18" palette="base_fix_b_pl" />
+        <key_frame frame="29" texture="base_fix_17" palette="base_fix_b_pl" />
+        <key_frame frame="35" texture="base_fix_16" palette="base_fix_b_pl" />
+      </track>
+    </pattern_animation>
+  </library_pattern_animations>
+  <library_raw_pattern_animations>
+    <pattern_animation name="FN_A" num_frames="48">
+      <track>
+        <key_frame frame="0" />
+        <key_frame frame="12" />
+        <key_frame frame="18" />
+        <key_frame frame="24" />
+        <key_frame frame="36" />
+        <key_frame frame="42" />
+      </track>
+    </pattern_animation>
+    <pattern_animation name="BN_A" num_frames="48">
+      <track>
+        <key_frame frame="0" />
+        <key_frame frame="12" />
+        <key_frame frame="18" />
+        <key_frame frame="24" />
+        <key_frame frame="36" />
+        <key_frame frame="42" />
+      </track>
+    </pattern_animation>
+    <pattern_animation name="FN_B" num_frames="42">
+      <track>
+        <key_frame frame="0" />
+        <key_frame frame="6" />
+        <key_frame frame="24" />
+        <key_frame frame="27" />
+        <key_frame frame="30" />
+        <key_frame frame="36" />
+      </track>
+    </pattern_animation>
+    <pattern_animation name="BN_B" num_frames="42">
+      <track>
+        <key_frame frame="0" />
+        <key_frame frame="6" />
+        <key_frame frame="24" />
+        <key_frame frame="27" />
+        <key_frame frame="30" />
+        <key_frame frame="36" />
+      </track>
+    </pattern_animation>
+    <pattern_animation name="FN_C" num_frames="72">
+      <track>
+        <key_frame frame="0" />
+        <key_frame frame="12" />
+        <key_frame frame="24" />
+        <key_frame frame="36" />
+        <key_frame frame="48" />
+        <key_frame frame="60" />
+      </track>
+    </pattern_animation>
+    <pattern_animation name="BN_C" num_frames="72">
+      <track>
+        <key_frame frame="0" />
+        <key_frame frame="12" />
+        <key_frame frame="24" />
+        <key_frame frame="36" />
+        <key_frame frame="48" />
+        <key_frame frame="60" />
+      </track>
+    </pattern_animation>
+    <pattern_animation name="FN_D" num_frames="41">
+      <track>
+        <key_frame frame="0" />
+        <key_frame frame="1" />
+        <key_frame frame="2" />
+        <key_frame frame="5" />
+        <key_frame frame="23" />
+        <key_frame frame="29" />
+        <key_frame frame="35" />
+      </track>
+    </pattern_animation>
+    <pattern_animation name="BN_D" num_frames="41">
+      <track>
+        <key_frame frame="0" />
+        <key_frame frame="1" />
+        <key_frame frame="2" />
+        <key_frame frame="5" />
+        <key_frame frame="23" />
+        <key_frame frame="29" />
+        <key_frame frame="35" />
+      </track>
+    </pattern_animation>
+  </library_raw_pattern_animations>
+</library_collection>

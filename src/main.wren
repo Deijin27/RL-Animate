@@ -6,7 +6,9 @@ import "graphics" for Canvas, Color, ImageData, Font
 import "input" for Keyboard, Mouse
 import "io" for FileSystem
 import "pattern_animation" for LibraryPatternAnimationCollection
-import "dome" for Process, Window
+import "dome" for Process, Window, Log
+
+Log.level = "DEBUG"
 
 class AppFont {
   static small { "small" }
@@ -41,11 +43,6 @@ class AnimationOrientation {
   static front { "F" }
   static back { "B" }
   static all { [ front, back ] }
-}
-
-class State {
-  static filesMissing { 0 }
-  static displayAnimation { 1 }
 }
 
 class SpriteStore {
@@ -172,48 +169,24 @@ class Button {
   }
 }
 
-class Main {
-  construct new() { }
-  
-  init() {
-    Window.title = "PKMDL Previewer v1.0"
-    AppFont.load()
-    _updateCounter = -1
-    _reloadButton = Button.new(10, 220, "RELOAD")
-    reload()
+class State {
+  update() {}
+  draw(dt) {}
+}
+
+class FilesMissingState is State {
+  construct new() {}
+  draw(dt) {
+    Canvas.print("Files Missing. Place an animation file, \nand a sprite sheet in the folder next\n to the application", 50, 50, AppColor.foreground)
   }
+}
 
-  reload() {
-    loadExternalFiles()
-    _currentAnimationLibrary = []
-    if (_state == State.displayAnimation) {
-      loadStateDisplayAnim()
-    }
-  }
-
-  loadExternalFiles() {
-    _animationFile = null
-    _spriteSheetFile = null
-
-    var surroundingFiles = FileSystem.listFiles("")
-    for (f in surroundingFiles) {
-      if (f.endsWith(".png")) {
-        _spriteSheetFile = f
-      } else if (f.endsWith(".xml")) {
-        _animationFile = f
-      }
-    }
-
-    if (_spriteSheetFile == null || _animationFile == null) {
-      _state = State.filesMissing
-    } else {
-      _state = State.displayAnimation
-    }
-  }
-
-  loadStateDisplayAnim() {
-    _animLibCollection = LibraryPatternAnimationCollection.new(FileSystem.load(_animationFile))
-    _spriteStore = SpriteStore.new(ImageData.loadFromFile(_spriteSheetFile))
+class PatternAnimationState is State {
+  construct new(animationFile, spriteSheetFile) {
+    Log.debug("Loading pattern animation state for files: anim='%(animationFile)', spriteSheet='%(spriteSheetFile)'")
+    var animFileContent = FileSystem.load(animationFile)
+    _animLibCollection = LibraryPatternAnimationCollection.new(animFileContent)
+    _spriteStore = SpriteStore.new(ImageData.loadFromFile(spriteSheetFile))
     _animationDisplays = []
     var y = 20
     for (typ in AnimationType.all) {
@@ -231,32 +204,66 @@ class Main {
   }
 
   update() {
-    _updateCounter = _updateCounter + 1
+    for (disp in _animationDisplays) {
+        disp.update()
+      }
+  }
 
+  draw(dt) {
+    for (disp in _animationDisplays) {
+        disp.draw(dt)
+      }
+      Canvas.print("ASYMMETRICAL: %(_animLibCollection.asymmetrical)", 210, 10, Color.white)
+      Canvas.print("LONG_ATTACK: %(_animLibCollection.longAttack)", 210, 25, Color.white)
+  }
+}
+
+class Main {
+  construct new() { }
+  
+  init() {
+    Window.title = "PKMDL Previewer v1.0"
+    AppFont.load()
+    
+    _reloadButton = Button.new(10, 220, "RELOAD")
+    reload()
+  }
+
+  reload() {
+    _state = loadPatternAnimation() || FilesMissingState.new()
+  }
+
+  loadPatternAnimation() {
+    var animationFile = null
+    var spriteSheetFile = null
+
+    var surroundingFiles = FileSystem.listFiles("")
+    for (f in surroundingFiles) {
+      if (f.endsWith(".png")) {
+        spriteSheetFile = f
+      } else if (f.endsWith(".xml")) {
+        animationFile = f
+      }
+    }
+
+    if (spriteSheetFile != null && animationFile != null) {
+      return PatternAnimationState.new(animationFile, spriteSheetFile)
+    }
+    return null
+  }
+
+  update() {
     _reloadButton.update()
     if (_reloadButton.justPressed) {
       reload()
     }
-    if (_state == State.displayAnimation) {
-      for (disp in _animationDisplays) {
-        disp.update()
-      }
-    }
+    _state.update()
   }
 
   draw(dt) {
     Canvas.cls(AppColor.background)
     _reloadButton.draw(dt)
-
-    if (_state == State.displayAnimation) {
-      for (disp in _animationDisplays) {
-        disp.draw(dt)
-      }
-      Canvas.print("ASYMMETRICAL: %(_animLibCollection.asymmetrical)", 210, 10, Color.white)
-      Canvas.print("LONG_ATTACK: %(_animLibCollection.longAttack)", 210, 25, Color.white)
-    } else if (_state == State.filesMissing) {
-      Canvas.print("Files Missing. Place an animation file, \nand a sprite sheet in the folder next\n to the application", 50, 50, AppColor.foreground)
-    }
+    _state.draw(dt)
   }
 }
 
