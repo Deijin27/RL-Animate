@@ -187,7 +187,7 @@ class PatternAnimationState is State {
     Log.debug("Loading pattern animation state for files: anim='%(animationFile)', spriteSheet='%(spriteSheetFile)'")
     var animFileContent = FileSystem.load(animationFile)
     _animLibCollection = LibraryPatternAnimationCollection.new(animFileContent)
-    _spriteStore = SpriteStore.new(ImageData.loadFromFile(spriteSheetFile))
+    _spriteStore = SpriteStore.new(ImageData.load(spriteSheetFile))
     _animationDisplays = []
     var y = 20
     for (typ in AnimationType.all) {
@@ -221,7 +221,7 @@ class PatternAnimationState is State {
 
 class CellAnimationState is State {
   construct new(dir, animationFile) {
-    _background = ImageData.loadFromFile(dir + "/background.png")
+    _background = ImageData.load(dir + "/background.png")
     _cellAnimationResource = CellAnimationResource.new(animationFile, dir)
   }
 

@@ -47,7 +47,7 @@ class CellImage {
   construct new(element, dir) {
     _name = element.attribute("name").value
     _file = element.attribute("file").value
-    var image = ImageData.loadFromFile(dir  + "/" + file)
+    var image = ImageData.load(dir  + "/" + file)
     _cells = element.elements("cell").map {|x| Cell.new(x, image) }.toList
   }
 }
@@ -69,7 +69,7 @@ class Animation {
 
   construct new(element) {
     _name = element.attribute("name").value
-    Log.debug("Loaded animation %(_name)")
+    Log.debug("Loaded animationg %(_name)")
     // frames with zero duration are ignored
     _frames = element.elements("frame").map {|x| Frame.new(x) }.where{|x| x.duration > 0 }.toList
     _frameId = 0
@@ -98,6 +98,7 @@ class CellAnimationResource {
   animations { _animations }
   
   construct new(file, dir) {
+    Log.debug("Loading animation file '%(file)'")
     var document = XDocument.parse(FileSystem.load(file))
     var root = document.element("nitro_animation_resource")
     _cellImages = {}
