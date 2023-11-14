@@ -81,7 +81,9 @@ class Animation {
       // this animation has no frames, so don't update it
       return
     }
-    if (frame.duration == _counter) {
+    
+    _counter = _counter + 1
+    if (_counter == frame.duration) {
       // move onto the next frame
       _counter = 0
       _frameId = _frameId + 1
@@ -89,9 +91,6 @@ class Animation {
         _frameId = 0
       }
       _frame = _frames[_frameId]
-
-    } else {
-      _counter = _counter + 1
     }
   }
 }
@@ -117,7 +116,9 @@ class CellAnimationResource {
   }
 
   draw(x, y) {
-    for (anim in _animations) {
+    // for some reason the draw order is back-to-front
+    for (i in (_animations.count-1)..0) {
+      var anim = _animations[i]
       var cellImage = _cellImages[anim.frame.image]
       for (cell in cellImage.cells) {
         Canvas.draw(cell.image, x + cell.x, y + cell.y)
