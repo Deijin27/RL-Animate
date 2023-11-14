@@ -2,62 +2,185 @@
 
  XSequence
  
- Version : 1.2.1
- Author  : Mia Boulter (Deijin27)
+ Version : 3.1.2
+ Author  : Deijin27
  Licence : MIT
  Website : https://github.com/deijin27/wren-xsequence
 
  */
 
-class XWriter {
-    static write(obj, writerCallable) {
-        if (obj is XDocument) {
-            writeDocument(obj, writerCallable)
-        } else if (obj is XElement) {
-            writeElement(obj, writerCallable)
-        } else if (obj is XAttribute) {
-            writeAttribute(obj, writerCallable)
-        } else if (obj == null) {
-            Fiber.abort("XWriter cannot write null")
-        } else {
-            Fiber.abort("XWriter cannot write type '%(obj.type)'")
+#doc = "A utility class for working with XML namespaces. You will probably never need this"
+class XNamespace {
+    #doc = "The xmlns namespace value 'https://www.w3.org/2000/xmlns/'. It's easier to use XAttribute.xmlns"
+    static xmlns { "https://www.w3.org/2000/xmlns/" }
+    #doc = "The xml namespace value 'http://www.w3.org/XML/1998/namespace'. It's easier to use XAttribute.xml"
+    static xml { "http://www.w3.org/XML/1998/namespace" }
+}
+
+#internal
+class NamespaceStack {
+    construct new() {
+        _current = 0
+        _stack = [{"xmlns": XNamespace.xmlns, "xml": XNamespace.xml}]
+        _autoNsIncrement = -1
+    }
+
+    push() {
+        _current = _current + 1
+        if (_stack.count <= _current) {
+            _stack.add({})
         }
     }
 
-    static writeDocument(document, writerCallable) {
-        writerCallable.call("<?xml version=\"1.0\" encoding=\"utf-8\"?>")
-        if (document.root != null) {
-            writerCallable.call("\n")
-            writeElement(document.root, writerCallable)
-        }
+    pop() {
+        // reuse the dictionaries rather than creating new ones each time
+        _stack[_current].clear()
+        _current = _current - 1
     }
 
-    static writeElement(element, writerCallable) {
-        writeElement(element, "", writerCallable)
-    }
-
-    static writeElement(element, indent, writerCallable) {
-        writerCallable.call("<%(element.name)")
-        for (attribute in element.attributes) {
-            writerCallable.call(" ")
-            writeAttribute(attribute, writerCallable)
-        }
-        if (element.elements.count > 0) {
-            var newIndent = indent + "  "
-            writerCallable.call(">")
-            for (childElement in element.elements) {
-                writerCallable.call("\n")
-                writerCallable.call(newIndent)
-                writeElement(childElement, newIndent, writerCallable)
+    getValue(prefix) {
+        for (i in _current..0) {
+            var value = _stack[i][prefix]
+            if (value != null) {
+                return value
             }
-            writerCallable.call("\n%(indent)</%(element.name)>")
-
-        } else if (element.value != null && element.value != "") {
-            var elementVal = escape(element.value)
-            writerCallable.call(">%(elementVal)</%(element.name)>")
-        } else {
-            writerCallable.call("/>")
         }
+        Fiber.abort("Use of undefined namespace prefix '%(prefix)'")
+    }
+
+    tryGetValue(prefix) {
+        for (i in _current..0) {
+            var value = _stack[i][prefix]
+            if (value != null) {
+                return value
+            }
+        }
+        return null
+    }
+
+    getPrefix(value) {
+        for (i in _current..0) {
+            var dict = _stack[i]
+            for (kvp in dict) {
+                if (kvp.value == value) {
+                    var prefix = kvp.key
+                    // make sure this is the latest defined one
+                    // since the prefix could have been redefined
+                    var valueBack = getValue(prefix)
+                    if (valueBack == value) {
+                        return prefix
+                    }
+                }
+            }
+        }
+        Fiber.abort("Use of undefined namespace '%(value)'")
+    }
+
+    // gets a prefix corresponding to a namespace, else creates a new one
+    // this specifically excludes the default namespace, which can't be used for attributes
+    getNonDefaultPrefix(value) {
+        for (i in _current..0) {
+            var dict = _stack[i]
+            for (kvp in dict) {
+                if (kvp.value == value) {
+                    var prefix = kvp.key
+                    // make sure this isn't null
+                    if (prefix == null) {
+                        continue
+                    }
+                    // make sure this is the latest defined one
+                    // since the prefix could have been redefined
+                    var valueBack = getValue(prefix)
+                    if (valueBack == value) {
+                        return prefix
+                    }
+                }
+            }
+        }
+        Fiber.abort("Use of undefined namespace '%(value)' in attribute which require explicit prefix")
+        return prefix
+    }
+
+    setPrefixValue(prefix, value) {
+        _stack[_current][prefix] = value
+    }
+}
+
+#doc = "A utility class for working with XML names and namespaces"
+class XName {
+    #doc = "Split a string of format '{namespace}localName' into an XName which has properties to access it's namespace and local name"
+    #arg(name=name)
+    static split(name) {
+        if (name[0] != "{") {
+            // does not have namespace
+            return XName.new_(null, name)
+        } else {
+            // has namespace
+            var idx = name.indexOf("}")
+            return XName.new_(name[1...idx], name[(idx + 1)..-1])
+        }
+    }
+
+    #doc = "Build a name string from it's components"
+    #arg(name=namespace)
+    #arg(name=localName)
+    static build(namespace, localName) {
+        return "{%(namespace)}%(localName)"
+    }
+
+    construct new_(namespace, localName) {
+        _localName = localName
+        _namespace = namespace
+    }
+
+    #doc = "The namespace of this XML name"
+    namespace { _namespace }
+    #doc = "The local name of this XML name"
+    localName { _localName }
+    #doc = "Convert to string"
+    toString {
+        if (_namespace == null) {
+            return _localName
+        }
+        return XName.build(_namespace, _localName)
+    }
+
+    static splitFast(name) {
+        // name is "{blue}bird"
+        if (name[0] != "{") {
+            // does not have namespace
+            return null
+        } else {
+            // has namespace
+            var idx = name.indexOf("}")
+            return XName.new_(name[1...idx], name[(idx + 1)..-1])
+        }
+    }
+
+    static splitPrefixFast(name) {
+        // name is "b:bird"
+        var colonPos = name.indexOf(":")
+        if (colonPos == -1) {
+            return null
+        } else {
+            return XName.new_(name[0...colonPos], name[(colonPos+1)..-1])
+        }
+    }
+}
+
+#internal
+class XWriter {
+
+    construct new(writerCallable) {
+        _writerCallable = writerCallable
+        _namespaceStack = NamespaceStack.new()
+        __xmlnsWrapped = "{%(XNamespace.xmlns)}"
+    }
+
+    construct new(namespaceStack, writerCallable) {
+        _writerCallable = writerCallable
+        _namespaceStack = namespaceStack
+        __xmlnsWrapped = "{%(XNamespace.xmlns)}"
     }
 
     static escape(str) {
@@ -69,17 +192,138 @@ class XWriter {
             .replace("'", "&apos;")
     }
 
-    static writeAttribute(attribute, writerCallable) {
-        var value = escape(attribute.value)
-        return writerCallable.call("%(attribute.name)=\"%(value)\"")
+    // Namespace-Aware Writers
+
+    writeComment(comment) {
+        _writerCallable.call("<!--")
+        // comments only disallow "--"
+        _writerCallable.call(comment.value.replace("--", "- - "))
+        _writerCallable.call("-->")
+    }
+
+    writeText(text) {
+        var value = XWriter.escape(text.value)
+        _writerCallable.call(value)
+    }
+
+    writeCData(cdata) {
+        _writerCallable.call("<![CDATA[")
+        // escape what could be misinterpreted as the closing tag
+        _writerCallable.call(cdata.value.replace("]]>", "] ]>"))
+        _writerCallable.call("]]>")
+    }
+
+    writeAttribute(attribute) {
+        var value = XWriter.escape(attribute.value)
+        // handle namespace
+        var name = resolveAttributeName(attribute)
+        _writerCallable.call("%(name)=\"%(value)\"")
+    }
+
+    writeElement(element) {
+        writeElement(element, "")
+    }
+
+    loadNamespacesFromAttributes(element) {
+        for (attribute in element.attributes) {
+            if (attribute.name == "xmlns") {
+                _namespaceStack.setPrefixValue(null, attribute.value) 
+            } else if (attribute.name.startsWith(__xmlnsWrapped)) {
+                _namespaceStack.setPrefixValue(attribute.name[__xmlnsWrapped.count..-1], attribute.value)
+            }
+        }
+    }
+
+    resolveAttributeName(attribute) {
+        var name = attribute.name
+        var split = XName.splitFast(attribute.name)
+        if (split != null) {
+            var prefix = _namespaceStack.getNonDefaultPrefix(split.namespace)
+            name = "%(prefix):%(split.localName)"
+        }
+        return name
+    }
+
+    resolveElementName(element) {
+        var name = element.name
+        var elementNameSplit = XName.splitFast(element.name)
+        if (elementNameSplit != null) {
+            var prefix = _namespaceStack.getPrefix(elementNameSplit.namespace)
+            // if the prefix is xmlns, which may have been defined above when parsing the attributes
+            // then that is the default namespace, and can be omitted
+            if (prefix != null) {
+                name = "%(prefix):%(elementNameSplit.localName)"
+            } else {
+                name = elementNameSplit.localName
+            }
+        }
+        return name
+    }
+
+    writeElement(element, indent) {
+        // begin a new namespace scope for each element
+        _namespaceStack.push()
+
+        // load namespaces from attributes
+        loadNamespacesFromAttributes(element)
+
+        // get the element's name, applying namespace prefix if necessary
+        var name = resolveElementName(element)
+
+        // write element opening tag
+        _writerCallable.call("<%(name)")
+        
+        // write attributes
+        for (attribute in element.attributes) {
+            _writerCallable.call(" ")
+            writeAttribute(attribute)
+        }
+
+        if (element.nodes.count > 0) {
+            _writerCallable.call(">")
+            if (indent == null || element.nodes.any {|x| x is XText }) {
+                // because there are xtext nodes we cannot have fancy 
+                // whitespace because it's text / mixed content
+                for (node in element.nodes) {
+                    node.writeWith(this, null)
+                }
+                _writerCallable.call("</%(name)>")
+            } else {
+                // write content nodes that are not xtext
+                // here we can have fancy whitespace
+                var newIndent = indent + "  "
+                for (node in element.nodes) {
+                    _writerCallable.call("\n" + newIndent)
+                    node.writeWith(this, newIndent)
+                }
+                _writerCallable.call("\n%(indent)</%(name)>")
+            }
+        } else {
+            // element has no value, write short closing tag
+            _writerCallable.call("/>")
+        }
+
+        // end the namespace scope when element has been written
+        _namespaceStack.pop()
+    }
+
+    writeDocument(document) {
+        _writerCallable.call("<?xml version=\"1.0\" encoding=\"utf-8\"?>")
+        var indent = ""
+        for (node in document.nodes) {
+            _writerCallable.call("\n")
+            node.writeWith(this, indent)
+        }
     }
 }
 
+#internal
 class Code {
-    static EOF           { -1   } // end of file
+    static EOF           { -2   } // end of file (not using -1 because it's a common default so sometimes bugs can lead to false positives for EOF)
     
     static NEWLINE       { 0x0A } // \n
     static TAB           { 0x09 } // \t
+    static CARRIAGE_RETURN { 0x0D } // \r
     
 
     static SPACE         { 0x20 } //  
@@ -179,23 +423,31 @@ class Code {
     static TILDE         { 0x7E } // ~
 }
 
+#internal
 class XParser {
     construct new(source) {
-        source = source.replace("\r\n", "\n")
+        _namespaceStack = NamespaceStack.new()
+        source = source.replace("\r", "")
 
         _cur = -1
-        _end = source.count
+
+        // indexing code points directly doesn't work because the indexes are 
+        // to byte positions, not code point positions, so it you miss the start
+        // of a multi-byte point, you end up with -1
+        // we generate a list first in order to safely iterate through code points
+        // https://wren.io/modules/core/string.html#codepoints
+        _points = []
+        for (p in source.codePoints) {
+            _points.add(p)
+        }
+        _end = _points.count
 
         // skip utf-8 bom
-        if (source.startsWith("\xEF\xBB\xBF")) {
-            _cur = _cur + 3
-            _end = _end + 3
+        if (_points[0] == 65279) {
+            _cur = _cur + 1
         }
-
         _line = 0
         _col = 0
-        _points = source.codePoints
-        _in_comment = 0
     }
 
     peek() { peek(1) }
@@ -224,12 +476,12 @@ class XParser {
     expect(point) {
         var c = peek()
         if (c != point) {
-            unexpected(c)
+            unexpected(c, "Expected %(String.fromCodePoint(point))")
         }
         advance()
     }
 
-    expect(pointOption1, pointOption2) {
+    expect2(pointOption1, pointOption2) {
         var c = peek()
         if (c != pointOption1 && c != pointOption2) {
             unexpected(c)
@@ -247,13 +499,17 @@ class XParser {
             err = "end of file"
         } else if (point == Code.NEWLINE) {
             err = "newline"
+        } else if (point == Code.TAB) {
+            err = "tab"
         } else if (point == Code.SPACE) {
             err = "space"
+        } else if (point == Code.CARRIAGE_RETURN) {
+            err = "carriage return"
         } else {
             err = String.fromCodePoint(point)
         }
         advance()
-        var errorMessage = "unexpected '%(err)' at line %(_line):%(_col) (cur=%(_cur))"
+        var errorMessage = "unexpected '%(err)' at line %(_line):%(_col)"
         if (message != null) {
             errorMessage = errorMessage + " (%(message))"
         }
@@ -279,22 +535,25 @@ class XParser {
     }
 
     parseDocument() {
+        var doc = XDocument.new()
         while (true) {
             skipOptionalWhitespace()
-            if (peek() != Code.LESS_THAN) {
-                unexpected(peek())
+            var p1 = peek()
+            if (p1 == Code.EOF) {
+                break
+            } else if (p1 != Code.LESS_THAN) {
+                unexpected(p1, "Expect < at start of node in document")
             }
             var p = peek(2)
             if (p == Code.EXCLAMATION) {
-                parseComment()
-            }  else if (p == Code.QUESTION) {
+                doc.addComment(parseComment())
+            } else if (p == Code.QUESTION) {
                 parseDeclaration()
-            } else if (p == Code.EOF) {
-                return null
             } else {
-                return XDocument.new(parseElement())
+                doc.addElement(parseElement())
             }
         }
+        return doc
     }
 
     parseComment() {
@@ -303,25 +562,59 @@ class XParser {
         expect(Code.DASH)
         expect(Code.DASH)
 
+        var value = ""
+
         while (true) {
             var n = next()
             if (n == Code.EOF) {
                 unexpected(Code.EOF)
-            }
-            if (n == Code.DASH && peek() == Code.DASH && peek(2) == Code.GREATER_THAN) {
+            } else if (n == Code.DASH && peek() == Code.DASH && peek(2) == Code.GREATER_THAN) {
                 advance()
                 advance()
                 break
+            } else {
+                value = value + String.fromCodePoint(n)
             }
         }
+
+        return XComment.new(value)
+    }
+
+    parseCData() {
+        expect(Code.LESS_THAN)
+        expect(Code.EXCLAMATION)
+        expect(Code.LEFT_SQUARE)
+        expect(Code.C_UPPER)
+        expect(Code.D_UPPER)
+        expect(Code.A_UPPER)
+        expect(Code.T_UPPER)
+        expect(Code.A_UPPER)
+        expect(Code.LEFT_SQUARE)
+
+        var value = ""
+
+        while (true) {
+            var n = next()
+            if (n == Code.EOF) {
+                unexpected(Code.EOF)
+            } else if (n == Code.RIGHT_SQUARE && peek() == Code.RIGHT_SQUARE && peek(2) == Code.GREATER_THAN) {
+                advance()
+                advance()
+                break
+            } else {
+                value = value + String.fromCodePoint(n)
+            }
+        }
+
+        return XCData.new(value)
     }
 
     parseDeclaration() {
         expect(Code.LESS_THAN)
         expect(Code.QUESTION)
-        expect(Code.X_UPPER, Code.X_LOWER)
-        expect(Code.M_UPPER, Code.M_LOWER)
-        expect(Code.L_UPPER, Code.L_LOWER)
+        expect2(Code.X_UPPER, Code.X_LOWER)
+        expect2(Code.M_UPPER, Code.M_LOWER)
+        expect2(Code.L_UPPER, Code.L_LOWER)
 
         while (true) {
             var n = next()
@@ -336,6 +629,9 @@ class XParser {
     }
 
     parseElement() {
+        // begin a new namespace scope for each element
+        _namespaceStack.push()
+
         expect(Code.LESS_THAN)
 
         var name = parseElementName()
@@ -347,6 +643,7 @@ class XParser {
             var p = peek()
 
             if (p == Code.SLASH) {
+                processElementNamespaces(element)
                 // no-content closing tag
                 advance()
                 expect(Code.GREATER_THAN)
@@ -354,17 +651,9 @@ class XParser {
 
             } else if (p == Code.GREATER_THAN) {
                 // parse element content
+                processElementNamespaces(element)
                 advance()
-                var content = parseElementContent()
-                if (content is String) {
-                    element.value = content
-                } else if (content is Sequence) {
-                    for (item in content) {
-                        element.add(item)
-                    }
-                } else {
-                    element.add(content)
-                }
+                parseElementContentNodes(element)
                 // post-content closing tag
                 expect(Code.LESS_THAN)
                 expect(Code.SLASH)
@@ -382,11 +671,53 @@ class XParser {
                 unexpected(p)
             } else {
                 var attr = parseAttribute()
-                element.add(attr)
+                element.addAttribute(attr)
             }
         }
         
+        // end namespace scope at end of element
+        _namespaceStack.pop()
         return element
+    }
+
+    processElementNamespaces(element) {
+        // load namespaces from attributes
+        for (attribute in element.attributes) {
+            if (attribute.name == "xmlns") {
+                _namespaceStack.setPrefixValue(null, attribute.value) 
+            } else if (attribute.name.startsWith("xmlns:")) {
+                _namespaceStack.setPrefixValue(attribute.name[6..-1], attribute.value)
+            }
+        }
+
+        // apply namespaces to elements
+        var elementNameSplit = XName.splitPrefixFast(element.name)
+        if (elementNameSplit != null) {
+            var value = _namespaceStack.getValue(elementNameSplit.namespace)
+            // if the prefix is xmlns, which may have been defined above when parsing the attributes
+            // then that is the default namespace, and can be omitted
+            if (value != null) {
+                element.name = "{%(value)}%(elementNameSplit.localName)"
+            } else {
+                element.name = elementNameSplit.localName
+            }
+        } else {
+            // if no prefix, and a default namespace is defined, apply that
+            var defaultNs = _namespaceStack.tryGetValue(null)
+            if (defaultNs != null) {
+                element.name = "{%(defaultNs)}%(element.name)"
+            }
+        }
+
+        // apply namespaces to attributes
+        for (attribute in element.attributes) {
+            var name = attribute.name
+            var split = XName.splitPrefixFast(attribute.name)
+            if (split != null) {
+                var value = _namespaceStack.getValue(split.namespace)
+                attribute.name = "{%(value)}%(split.localName)"
+            }
+        }
     }
 
     parseElementName() {
@@ -411,79 +742,90 @@ class XParser {
             
             if (p == Code.EQUAL) {
                 break
-            } else if (p == Code.EOF || isWhitespace(p)) {
+            } else if (isWhitespace(p)) {
+                skipOptionalWhitespace()
+                expect(Code.EQUAL)
+                break
+            } else if (p == Code.EOF) {
                 unexpected(p)
             }
             name = name + String.fromCodePoint(p)
         }
 
         // at this point we are immediately after the equals sign
-
+        skipOptionalWhitespace()
         var val = parseAttributeValue()
 
         return XAttribute.new(name, val)
     }
 
-    parseElementContent() {
-        // peek past whitespace
-        var start = _cur
-        skipOptionalWhitespace()
-        if (peek() == Code.LESS_THAN && peek(2) != Code.SLASH) {
-            // content is nodes
-            return parseElementContentNodes()
-        } else {
-            // content is text
-            _cur = start
-            return parseElementValue()
-        }
-    }
-
-    parseElementValue() {
+    // parse an XText
+    parseText() {
         var value = ""
         while (true) {
             var p = peek()
             if (p == Code.LESS_THAN) {
-                // begin of closing tag, element value complete
+                // begin of node tag, xtext complete
                 break
             } else if (p == Code.AMPERSAND) {
                 // escape sequence
                 value = value + parseEscapeSequence()
             } else if (p == Code.EOF) {
-                unexpected(c)
+                unexpected(p)
             } else {
                 // simple character
                 value = value + String.fromCodePoint(p)
+                advance()
             }
-            advance()
         }
-        return value
+        return XText.new(value)
     }
 
-    parseElementContentNodes() {
-        var nodes = []
+    // "element" is the element to add the parsed nodes to
+    parseElementContentNodes(element) {
         while (true) {
-            if (peek() != Code.LESS_THAN) {
-                unexpected(peek())
-            }
-            var p = peek(2)
-            if (p == Code.EXCLAMATION) {
-                parseComment()
-            } else if (p == Code.EOF) {
-                unexpected(p)
-            } else {
-                nodes.add(parseElement())
-            }
+            // remember the start in case it's xtext, and so we need to 
+            // include the whitespace in its value
+            var start = _cur
             skipOptionalWhitespace()
-            if (peek() == Code.LESS_THAN && peek(2) == Code.SLASH) {
-                // closing tag
-                break
+            var p1 = peek()
+            if (p1 == Code.LESS_THAN) {
+
+                // some kind of tag -> not xtext
+                var p2 = peek(2)
+                if (p2 == Code.SLASH) {
+                    // closing tag: this is the end of the element's content
+                    break
+                } else if (p2 == Code.EXCLAMATION) {
+
+                    // cdata or comment
+                    var p3 = peek(3)
+                    if (p3 == Code.LEFT_SQUARE) {
+                        // cdata
+                        element.addCData(parseCData())
+                    } else {
+                        // comment
+                        element.addComment(parseComment())
+                    }
+
+                } else if (p2 == Code.EOF) {
+                    unexpected(Code.EOF)
+                } else {
+                    element.addElement(parseElement())
+                }
+
+            } else if (p1 == Code.EOF) {
+                unexpected(Code.EOF)
+            } else {
+                // xtext, so we go back and include the whitespace in its value
+                _cur = start
+                element.addText(parseText())
             }
         }
-        return nodes
     }
 
     parseAttributeValue() {
-        expect(Code.QUOTATION, Code.APOSTROPHE)
+        expect2(Code.QUOTATION, Code.APOSTROPHE)
         var value = ""
         while (true) {
             var p = peek()
@@ -575,84 +917,366 @@ class XParser {
     }
 }
 
-class XAttribute {
+#abstract
+class XObject {
+    #doc = "Convert to string representation"
+    toString {
+        var result = ""
+        write() {|x|
+            result = result + x
+        }
+        return result
+    }
+
+    #doc = "Convert to string in parts and pass to a function. Allows more efficient writing to file streams where avaliable"
+    #arg(name=writerCallable)
+    write(writerCallable) {
+        Fiber.abort("write method must be implemented on abstract class XObject")
+    }
+}
+
+#doc = "An XML attribute"
+class XAttribute is XObject {
+    #doc = "Create from string"
+    #arg(name=text)
     static parse(text) {
         var parser = XParser.new(text)
         return parser.parseAttribute()
     }
-    toString {
-        var result = ""
-        XWriter.writeAttribute(this) {|x|
-            result = result + x
-        }
-        return result
-    }
     write(writerCallable) {
-        XWriter.writeAttribute(this, writerCallable)
+        var writer = XWriter.new(writerCallable)
+        writer.writeAttribute(this)
     }
 
+    #doc = "Create a new attribute with the given name and value. If the provided value isn't a string, it will be converted with toString"
+    #arg(name=name)
+    #arg(name=value)
     construct new(name, value) {
+        if (!(name is String)) Fiber.abort("Attribute name must be string")
         _name = name
         this.value = value
     }
 
+    #doc = "Create a new attribute defining the default namespace xmlns='value'"
+    #arg(name=value)
+    static xmlns(value) {
+        return XAttribute.new("xmlns", value)
+    }
+
+    #doc = "Create a new attribute defining an namespace xmlns:prefix='value'"
+    #arg(name=prefix)
+    #arg(name=value)
+    static xmlns(prefix, value) {
+        return XAttribute.new("{%(XNamespace.xmlns)}%(prefix)", value)
+    }
+
+    #doc = "Create a new attribute with the xml prefix xml:prefix='value'"
+    #arg(name=prefix)
+    #arg(name=value)
+    static xml(prefix, value) {
+        return XAttribute.new("{%(XNamespace.xml)}%(prefix)", value)
+    }
+
+    #doc = "Get the name of this attribute. The name cannot be changed"
     name { _name }
 
+    #doc = "Set the name of this attribute. This must be a string."
+    #arg(name=value)
+    name=(value) {
+        if (!(value is String)) Fiber.abort("Element name must be string")
+        _name = value
+    }
+
+    #doc = "Get the string value of the attribute"
     value { _value }
+
+    #doc = "Set the string value of the attribute. If the provided value isn't a string, it will be converted with toString"
+    #arg(name=value)
     value=(value) {
         if (value == null) {
             _value = ""
+        } else if (value is String) {
+            _value = value
+        } else {
+            _value = value.toString 
         }
-        _value = value.toString 
+    }
+
+    #internal
+    addTo(parent) {
+        parent.addAttribute(this)
+    }
+    #internal
+    removeFrom(parent) {
+        parent.removeAttribute(this)
     }
 
 }
 
-class XElement {
+#doc = "An XML text node"
+class XText is XObject {
+    #doc = "Create from string"
+    #arg(name=text)
+    static parse(text) {
+        var parser = XParser.new(text)
+        return parser.parseText()
+    }
+    write(writerCallable) {
+        var writer = XWriter.new(writerCallable)
+        writer.writeText(this)
+    }
 
+    #internal
+    writeWith(writer, indent) {
+        writer.writeText(this)
+    }
+
+    #doc = "Create a new XText node with the given string content"
+    #arg(name=value)
+    construct new(value) {
+        this.value = value
+    }
+
+    #doc = "Get the string content"
+    value { _value }
+
+    #doc = "Set the string content. If it's not a string, it is converted with toString"
+    #arg(name=value)
+    value=(value) {
+        if (value == null) {
+            _value = ""
+        } else if (value is String) {
+            _value = value
+        } else {
+            _value = value.toString 
+        }
+    }
+
+    #internal
+    addTo(parent) {
+        parent.addText(this)
+    }
+    #internal
+    removeFrom(parent) {
+        parent.removeText(this)
+    }
+}
+
+#doc = "An XML CDATA node"
+class XCData is XText {
+    #doc = "Create from string"
+    #arg(name=text)
+    static parse(text) {
+        var parser = XParser.new(text)
+        return parser.parseCData()
+    }
+    write(writerCallable) {
+        var writer = XWriter.new(writerCallable)
+        writer.writeCData(this)
+    }
+
+    #internal
+    writeWith(writer, indent) {
+        writer.writeCData(this)
+    }
+
+    #doc = "Create a new CData node with the given string content"
+    #arg(name=value)
+    construct new(value) {
+        super(value)
+    }
+
+    #internal
+    addTo(parent) {
+        parent.addCData(this)
+    }
+    #internal
+    removeFrom(parent) {
+        parent.removeCData(this)
+    }
+}
+
+#doc = "An XML comment"
+class XComment is XObject {
+    #doc = "Create from string"
+    #arg(name=text)
+    static parse(text) {
+        var parser = XParser.new(text)
+        return parser.parseComment()
+    }
+    write(writerCallable) {
+        var writer = XWriter.new(writerCallable)
+        writer.writeComment(this)
+    }
+
+    #internal
+    writeWith(writer, indent) {
+        writer.writeComment(this)
+    }
+
+    #doc = "Create a new comment with the given string content"
+    #arg(name=value)
+    construct new(value) {
+        this.value = value
+    }
+
+    #doc = "Get the string content of this comment"
+    value { _value }
+
+    #doc = "Set the string content of this comment. If it's not a string, it is converted with toString"
+    #arg(name=value)
+    value=(value) {
+        if (value == null) {
+            _value = ""
+        } else if (value is String) {
+            _value = value
+        } else {
+            _value = value.toString 
+        }
+    }
+
+    #internal
+    addTo(parent) {
+        parent.addComment(this)
+    }
+    #internal
+    removeFrom(parent) {
+        parent.removeComment(this)
+    }
+}
+
+#abstract
+class XContainer is XObject {
+
+    init_() {
+        _nodes = []
+    }
+
+    #doc = "Gets the first element of this name, or null if no element of the name exists"
+    #arg(name=name)
+    element(name) {
+        for (e in elements) {
+            if (e.name == name) {
+                return e
+            }
+        }
+        return null
+    }
+
+    #doc = "Gets the String value of the first element of this name. Since an element's value is never null, this will only be null if the element is not found."
+    #arg(name=name)
+    elementValue(name) {
+        var e = element(name)
+        return e != null ? e.value : null
+    }
+
+    #doc = "Sequence of the child nodes"
+    nodes { _nodes }
+
+    #doc = "Sequence of the child elements, or an empty sequence if there are no elements"
+    elements { _nodes.where {|node| node is XElement } }
+
+    #doc = "Gets all elements of the given name, or an empty sequence if no matching elements are found"
+    #arg(name=name)
+    elements(name) { _nodes.where {|node| node is XElement && node.name == name } }
+
+    #doc = "Sequence of the child comments, or an empty sequence if there are no comments"
+    comments { _nodes.where {|node| node is XComment }}
+
+    #internal
+    addElement(child) {
+        _nodes.add(child)
+    }
+    #internal
+    addComment(child) {
+        _nodes.add(child)
+    }
+    #internal
+    removeElement(child) {
+      _nodes.remove(child)
+    }
+    #internal
+    removeComment(child) {
+      _nodes.remove(child)
+    }
+
+    #doc = "Adds each of the items in the sequence to this container"
+    #arg(name=sequence)
+    addAll(sequence) {
+      for (i in sequence) {
+        i.addTo(this)
+      }
+    }
+}
+
+#doc = "An XML element"
+class XElement is XContainer {
+
+    #doc = "Create from string"
+    #arg(name=text)
     static parse(text) {
         var parser = XParser.new(text)
         return parser.parseElement()
     }
-    toString {
-        var result = ""
-        XWriter.writeElement(this) {|x|
-            result = result + x
-        }
-        return result
-    }
     write(writerCallable) {
-        XWriter.writeElement(this, writerCallable)
+        var writer = XWriter.new(writerCallable)
+        writer.writeElement(this)
+    }
+
+    #internal
+    writeWith(writer, indent) {
+        writer.writeElement(this, indent)
     }
 
     init_(name) {
-        if (name == null) Fiber.abort("Element name cannot be null")
-        if (!(name is String)) Fiber.abort("Element name must be a string")
-        _name = name
+        this.name = name
         _attributes = []
-        _elements = []
-        _value = ""
+        init_()
     }
 
-    init_(name, content) {
+    init_(name, sequence) {
         init_(name)
-        if (content == null) {
-            Fiber.abort("Element content cannot be null")
-        } else if (content is String) {
-            _value = content
-        } else {
-            add(content)
+        // Support setting value and attributes during construction
+        for (child in sequence) {
+            if (child is XObject) {
+                child.addTo(this)
+            } else {
+                addText(XText.new(child))
+            }
         }
     }
 
-    // additional arguments after name are contents i.e. elements and attributes
-    // or alternatively, a single value after name is the "value" of the element
+    #doc = "Creates empty element"
+    #arg(name=name)
     construct new(name) {
         init_(name)
     }
 
+    #doc = """
+    Creates element. Content can be string, node, attribute, or Sequence of those things.
+    
+    Anything else is converted with toString. Keep in mind that a Sequence will not be converted with toString,
+    but rather, it is iterated over.
+    """
+    #arg(name=name)
+    #arg(name=content)
     construct new(name, content) {
-        init_(name, content)
+        // be careful here, a String is a Sequence so this check must come before the Sequence one
+        if (content is String) {
+            init_(name)
+            addText(XText.new(content))
+            return
+        }
+        if (content is Sequence) {
+            init_(name, content)
+            return
+        }
+        init_(name)
+        if (content is XObject) {
+            content.addTo(this)
+        } else {
+            addText(XText.new(content))
+        }
     }
 
     // The following allows dropping the [] in most circumstances
@@ -673,17 +1297,39 @@ class XElement {
     construct new(name, c0, c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13) { init_(name, [c0, c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13]) }
     construct new(name, c0, c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, c14) { init_(name, [c0, c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, c14]) }
 
-    // The name of this element
+    #doc = "Get the name of this element"
     name { _name }
 
-    // get string content. If content is not a String, returns empty string
-    value { _value }
-    value=(v) {
-        if (!(v is String)) Fiber.abort("Element value must be string")
-        _value = v
+    #doc = "Set the name of this element. This must be a string."
+    #arg(name=value)
+    name=(value) {
+        if (!(value is String)) Fiber.abort("Element name must be string")
+        _name = value
     }
 
-    // Gets the attribute of this name, or null if no attribute of the name exists
+    #doc = "Get string content. If content is not a String, returns empty string"
+    value {
+        var result = ""
+        for (node in nodes) {
+            if (node is XText) {
+                result = result + node.value
+            }
+        }
+        return result
+    }
+
+    #doc = "Replace all current content with the given string. If it's not a string, it is converted with toString"
+    #arg(name=value)
+    value=(value) {
+        nodes.clear()
+        if (value == null) {
+            return
+        }
+        addText(XText.new(value))
+    }
+
+    #doc = "Gets the attribute of this name, or null if no attribute of the name exists"
+    #arg(name=name)
     attribute(name) {
         for (a in attributes) {
             if (a.name == name) {
@@ -693,64 +1339,73 @@ class XElement {
         return null
     }
 
-    // Sequence of the attributes of this element
+    #doc = "Sequence of the attributes of this element"
     attributes { _attributes }
 
-    // Gets the first element of this name, or null if no element of the name exists
-    element(name) {
-        for (e in elements) {
-            if (e.name == name) {
-                return e
-            }
-        }
-        return null
-    }
-
-    // Sequence of the child elements of this element
-    elements { _elements }
-
-    // Gets all elements of the given name. An empty sequence if no elements are found
-    elements(name) { elements.where {|e| e.name == name } }
-
-    // returns first attribute or element of name, attributes get priority
-    child(name) {
-        var result = attribute(name)
-        if (attr == null) {
-            result = element(name)
-        }
-        return result
-    }
-
-    // add a child XAttribute or XElement, or a Sequence of them
+    #doc = "Add a child attribute/node, or a Sequence of them."
+    #arg(name=child)
     add(child) {
-        if (child is XAttribute) {
-            if (attribute(child.name) != null){
-                Fiber.abort("Duplicate XAttribute of name '%(child.name)'")
-            }
-            _attributes.add(child)
-
-        } else if (child is XElement) {
-            _elements.add(child)
-
+        if (child is String) {
+            addText(XText.new(child))
         } else if (child is Sequence) {
-            for (i in child) {
-                add(i)
-            }
+            addAll(child)
         } else {
-            Fiber.abort("Invalid child of XElement '%(child)'")
+            child.addTo(this)
         }
     }
 
-    // remove a child XAttribute or XElement
+    #doc = "Remove a child attribute or node"
+    #arg(name=child)
     remove(child) {
-        if (child is XAttribute) {
-            _attributes.remove(child)
-        } else if (child is XElement) {
-            _elements.remove(child)
-        }
+        child.removeFrom(this)
     }
 
-    // sets value of existing attribute, or creates new attribute
+    #internal
+    addAttribute(child) {
+        if (attribute(child.name) != null){
+            Fiber.abort("Duplicate XAttribute of name '%(child.name)'")
+        }
+        _attributes.add(child)
+    }
+    #internal
+    removeAttribute(child) {
+      _attributes.remove(child)
+    }
+    #internal
+    addText(child) {
+        nodes.add(child)
+    }
+    #internal
+    removeText(child) {
+        nodes.remove(child)
+    }
+    #internal
+    addCData(child) {
+        nodes.add(child)
+    }
+    #internal
+    removeCData(child) {
+        nodes.remove(child)
+    }
+    #internal
+    addTo(parent) {
+        parent.addElement(this)
+    }
+    #internal
+    removeFrom(parent) {
+        parent.removeElement(this)
+    }
+
+    #doc = "Gets the String value of the attribute of this name. Since an attribute's value is never null, this will only be null if the attribute is not found."
+    #arg(name=name)
+    attributeValue(name) {
+        var attr = attribute(name)
+        return attr != null ? attr.value : null
+    }
+
+    #doc = "Sets value of existing attribute, or creates new attribute. null value removes the attribute"
+    #arg(name=name)
+    #arg(name=value)
     setAttributeValue(name, value) {
         if (value == null) {
             _attributes.remove(attribute(name))
@@ -765,38 +1420,92 @@ class XElement {
     }
 }
 
-class XDocument {
+#doc = "An XML document"
+class XDocument is XContainer {
+    #doc = "Create from parsing a string"
+    #arg(name=text)
     static parse(text) {
         var parser = XParser.new(text)
         return parser.parseDocument()
     }
-    toString {
-        var result = ""
-        XWriter.writeDocument(this) {|x|
-            result = result + x
-        }
-        return result
-    }
+
     write(writerCallable) {
-        XWriter.writeDocument(this, writerCallable)
+        var writer = XWriter.new(writerCallable)
+        writer.writeDocument(this)
     }
 
+    #doc = "Creates an empty document"
     construct new() {
-        _root = null
-    }
-    construct new(rootElement) {
-        root = rootElement
+        init_()
     }
 
-    root { _root }
-    root=(element) {
-        if (element == null) {
-            _root = null
-            return
+    #doc = "Creates a document with content. Content can be XElement, XComment, or Sequence of them"
+    #arg(name=content)
+    construct new(content) {
+        init_()
+        if (content == null) {
+            Fiber.abort("XDocument content cannot be null")
+        } else {
+            add(content)
         }
-        if (!(element is XElement)) {
-            Fiber.abort("XDocument root must be XElement")
+    }
+
+    init_(sequence) {
+        init_()
+        addAll(sequence)
+    }
+
+    // The following allows dropping the [] in most circumstances
+    // Can't add any more of them because of the 16 parameter limit
+    // If wren adds an "args" syntax at some point, this should be replaced with that
+    construct new(c0, c1) { init_([c0, c1]) }
+    construct new(c0, c1, c2) { init_([c0, c1, c2]) }
+    construct new(c0, c1, c2, c3) { init_([c0, c1, c2, c3]) }
+    construct new(c0, c1, c2, c3, c4) { init_([c0, c1, c2, c3, c4]) }
+    construct new(c0, c1, c2, c3, c4, c5) { init_([c0, c1, c2, c3, c4, c5]) }
+    construct new(c0, c1, c2, c3, c4, c5, c6) { init_([c0, c1, c2, c3, c4, c5, c6]) }
+    construct new(c0, c1, c2, c3, c4, c5, c6, c7) { init_([c0, c1, c2, c3, c4, c5, c6, c7]) }
+    construct new(c0, c1, c2, c3, c4, c5, c6, c7, c8) { init_([c0, c1, c2, c3, c4, c5, c6, c7, c8]) }
+    construct new(c0, c1, c2, c3, c4, c5, c6, c7, c8, c9) { init_([c0, c1, c2, c3, c4, c5, c6, c7, c8, c9]) }
+    construct new(c0, c1, c2, c3, c4, c5, c6, c7, c8, c9, c10) { init_([c0, c1, c2, c3, c4, c5, c6, c7, c8, c9, c10]) }
+    construct new(c0, c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11) { init_([c0, c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11]) }
+    construct new(c0, c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12) { init_([c0, c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12]) }
+    construct new(c0, c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13) { init_([c0, c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13]) }
+    construct new(c0, c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, c14) { init_([c0, c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, c14]) }
+    construct new(c0, c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, c14, c15) { init_([c0, c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, c14, c15]) }
+
+    #doc = "The first and only node in this document that is an XElement. null if there is no XElement in the document."
+    root {
+        for (node in nodes) {
+            if (node is XElement) {
+                return node
+            }
         }
-        _root = element
+        return null
+    }
+
+    #doc = "Add a child node to the document. This can be an XComment or an XElement, or a Sequence of them."
+    #arg(name=child)
+    add(child) {
+        if (child is Sequence) {
+            addAll(child)
+        } else {
+            child.addTo(this)
+        }
+    }
+
+    #doc = "Remove a child XComment or XElement"
+    #arg(name=child)
+    remove(child) {
+        child.removeFrom(this)
+    }
+
+    #internal
+    addElement(child) {
+      if (root != null) {
+          Fiber.abort("Cannot add more than one XElement to document")
+      }
+      super.addElement(child)
     }
 }
+

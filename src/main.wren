@@ -6,6 +6,7 @@ import "graphics" for Canvas, Color, ImageData, Font
 import "input" for Keyboard, Mouse
 import "io" for FileSystem
 import "pattern_animation" for LibraryPatternAnimationCollection
+import "cell_animation" for CellAnimationResource
 import "dome" for Process, Window, Log
 
 Log.level = "DEBUG"
@@ -218,6 +219,24 @@ class PatternAnimationState is State {
   }
 }
 
+class CellAnimationState is State {
+  construct new(dir, animationFile) {
+    _background = ImageData.loadFromFile(dir + "/background.png")
+    _cellAnimationResource = CellAnimationResource.new(animationFile, dir)
+  }
+
+  update() {
+    _cellAnimationResource.update()
+  }
+
+  draw(dt) {
+    var x = 10
+    var y = 10
+    Canvas.draw(_background, x, y)
+    _cellAnimationResource.draw(x, y)
+  }
+}
+
 class Main {
   construct new() { }
   
@@ -230,7 +249,7 @@ class Main {
   }
 
   reload() {
-    _state = loadPatternAnimation() || FilesMissingState.new()
+    _state = loadPatternAnimation() || loadCellAnimation() || FilesMissingState.new()
   }
 
   loadPatternAnimation() {
@@ -252,6 +271,19 @@ class Main {
     return null
   }
 
+  loadCellAnimation() {
+    var surroundingDirs = FileSystem.listDirectories("")
+    for (d in surroundingDirs) {
+      var surroundingFiles = FileSystem.listFiles(d)
+      for (f in surroundingFiles) {
+        if (f.endsWith(".xml")) {
+          return CellAnimationState.new(d, d + "/" + f)
+        }
+      }
+    }
+    return null
+  }
+
   update() {
     _reloadButton.update()
     if (_reloadButton.justPressed) {
@@ -264,6 +296,7 @@ class Main {
     Canvas.cls(AppColor.background)
     _reloadButton.draw(dt)
     _state.draw(dt)
+    //Canvas.print("FPS: %(Window.fps)", 0, 0, Color.white)
   }
 }
 
