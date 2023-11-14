@@ -10,6 +10,7 @@ import "xsequence" for XDocument
 import "io" for FileSystem
 import "util" for StringUtil
 import "graphics" for ImageData, Canvas
+import "dome" for Log
 
 class Cell {
   x { _x }
@@ -68,7 +69,9 @@ class Animation {
 
   construct new(element) {
     _name = element.attribute("name").value
-    _frames = element.elements("frame").map {|x| Frame.new(x) }.toList
+    Log.debug("Loaded animation %(_name)")
+    // frames with zero duration are ignored
+    _frames = element.elements("frame").map {|x| Frame.new(x) }.where{|x| x.duration > 0 }.toList
     _frameId = 0
     _counter = 0
     if (_frames.count > 0) {
@@ -77,11 +80,6 @@ class Animation {
   }
 
   update() {
-    if (_frame == null) {
-      // this animation has no frames, so don't update it
-      return
-    }
-    
     _counter = _counter + 1
     if (_counter == frame.duration) {
       // move onto the next frame
@@ -106,7 +104,8 @@ class CellAnimationResource {
     for (cellImg in root.element("cell_collection").elements("image").map{|x| CellImage.new(x, dir) }) {
       _cellImages[cellImg.name] = cellImg
     }
-    _animations = root.element("animation_collection").elements("animation").map{|x| Animation.new(x)}.toList
+    // animations without frames are ignored
+    _animations = root.element("animation_collection").elements("animation").map{|x| Animation.new(x)}.where{|x| x.frames.count > 0 }.toList
   }
 
   update() {
