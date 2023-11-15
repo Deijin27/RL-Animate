@@ -100,7 +100,10 @@ class CellAnimationResource {
   construct new(file, dir) {
     Log.debug("Loading animation file '%(file)'")
     var document = XDocument.parse(FileSystem.load(file))
-    var root = document.element("nitro_animation_resource")
+    var root = document.element("nitro_cell_animation_resource")
+    if (root == null) {
+      Fiber.abort("CellAnimationResource document missing root element 'nitro_cell_animation_resource'")
+    }
     _cellImages = {}
     for (cellImg in root.element("cell_collection").elements("image").map{|x| CellImage.new(x, dir) }) {
       _cellImages[cellImg.name] = cellImg
