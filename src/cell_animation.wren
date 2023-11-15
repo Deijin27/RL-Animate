@@ -69,9 +69,9 @@ class Animation {
 
   construct new(element) {
     _name = element.attribute("name").value
-    Log.debug("Loaded animationg %(_name)")
+    Log.debug("Loaded animation %(_name)")
     // frames with zero duration are ignored
-    _frames = element.elements("frame").map {|x| Frame.new(x) }.where{|x| x.duration > 0 }.toList
+    _frames = element.elements("frame").map {|x| Frame.new(x) }.toList.where{|x| x.duration > 0 }.toList
     _frameId = 0
     _counter = 0
     if (_frames.count > 0) {
@@ -106,7 +106,7 @@ class CellAnimationResource {
       _cellImages[cellImg.name] = cellImg
     }
     // animations without frames are ignored
-    _animations = root.element("animation_collection").elements("animation").map{|x| Animation.new(x)}.where{|x| x.frames.count > 0 }.toList
+    _animations = root.element("animation_collection").elements("animation").map{|x| Animation.new(x)}.toList.where{|x| x.frames.count > 0 }.toList
   }
 
   update() {
