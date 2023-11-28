@@ -104,12 +104,21 @@ class CellAnimationResource {
     if (root == null) {
       Fiber.abort("CellAnimationResource document missing root element 'nitro_cell_animation_resource'")
     }
+    // decides whether to play the animation. if null or empty we should play all
+    var play = root.attributeValue("play")
+    var playAll = play == null || play == ""
+
     _cellImages = {}
     for (cellImg in root.element("cell_collection").elements("image").map{|x| CellImage.new(x, dir) }) {
       _cellImages[cellImg.name] = cellImg
     }
     // animations without frames are ignored
-    _animations = root.element("animation_collection").elements("animation").map{|x| Animation.new(x)}.toList.where{|x| x.frames.count > 0 }.toList
+    _animations = []
+    for (anim in root.element("animation_collection").elements("animation").map{|x| Animation.new(x)}) {
+      if (anim.frames.count > 0 && (playAll || play == anim.name)) {
+        _animations.add(anim)
+      }
+    }
   }
 
   update() {
