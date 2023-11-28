@@ -221,7 +221,10 @@ class PatternAnimationState is State {
 
 class CellAnimationState is State {
   construct new(dir, animationFile) {
-    _background = ImageData.load(dir + "/background.png")
+    var bgFile = dir + "/background.png"
+    if (FileSystem.doesFileExist(bgFile)) {
+      _background = ImageData.load(bgFile)
+    }
     _cellAnimationResource = CellAnimationResource.new(animationFile, dir)
   }
 
@@ -232,7 +235,9 @@ class CellAnimationState is State {
   draw(dt) {
     var x = 10
     var y = 10
-    Canvas.draw(_background, x, y)
+    if (_background != null) {
+      Canvas.draw(_background, x, y)
+    }
     _cellAnimationResource.draw(x, y)
   }
 }
