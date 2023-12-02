@@ -1,8 +1,6 @@
 /*
 
-Load pattern animations from xml document
-https://github.com/Deijin27/RanseiLink/blob/master/RanseiLink.Core/Graphics/Nitro/NSPAT.cs
-https://github.com/Deijin27/RanseiLink/blob/master/RanseiLink.Core/Graphics/Conquest/NSPAT_RAW.cs
+Load cell animations from xml document
 
 */
 
@@ -11,6 +9,12 @@ import "io" for FileSystem
 import "util" for StringUtil
 import "graphics" for ImageData, Canvas
 import "dome" for Log
+
+class CellFormat {
+  static oneImagePerCell { "OneImagePerCell" }
+  static oneImagePerBank { "OneImagePerBank" }
+  static all { [oneImagePerCell, oneImagePerBank] }
+}
 
 class Cell {
   x { _x }
@@ -21,19 +25,31 @@ class Cell {
   flipY { _flipY }
   image { _image }
 
-  construct new(element, image) {
+  construct new(element, image, dir, format) {
     _x = Num.fromString(element.attribute("x").value)
     _y = Num.fromString(element.attribute("y").value)
     _width = Num.fromString(element.attribute("width").value)
     _height = Num.fromString(element.attribute("height").value)
     _flipX = element.attributeValue("flip_x") == "true"
     _flipY = element.attributeValue("flip_y") == "true"
-
-    var transform = {
-      "srcX": x, 
-      "srcY": y,
-      "srcW": width, 
-      "srcH": height
+    _doubleSize = element.attributeValue("double_size") == "true"
+    
+    var transform = {}
+    if (format == CellFormat.oneImagePerCell) {
+      var file = element.attributeValue("file")
+      if (file == null || file == "") {
+        Fiber.abort("Element 'cell' missing required attribute 'file'. This is required because the format is '%(format)'")
+      }
+      image = ImageData.load(dir + "/" + file)
+      if (_doubleSize) {
+        transform["scaleX"] = 2
+        transform["scaleY"] = 2
+      }
+    } else if (format == CellFormat.oneImagePerBank) {
+      transform["srcX"] = x 
+      transform["srcY"] = y
+      transform["srcW"] = width 
+      transform["srcH"] = height
     }
     _image = image.transform(transform)
   }
@@ -44,11 +60,17 @@ class CellImage {
   file { _file }
   cells { _cells }
 
-  construct new(element, dir) {
+  construct new(element, dir, format) {
     _name = element.attribute("name").value
-    _file = element.attribute("file").value
-    var image = ImageData.load(dir  + "/" + file)
-    _cells = element.elements("cell").map {|x| Cell.new(x, image) }.toList
+    _file = element.attributeValue("file")
+    var image = null
+    if (format == CellFormat.oneImagePerBank) {
+      if (_file == null) {
+        Fiber.abort("Element 'image' missing required attribute 'file'. This is required because the format is '%(format)'")
+      }
+      var image = ImageData.load(dir  + "/" + file)
+    }
+    _cells = element.elements("cell").map {|x| Cell.new(x, image, dir, format) }.toList
   }
 }
 
@@ -108,8 +130,17 @@ class CellAnimationResource {
     var play = root.attributeValue("play")
     var playAll = play == null || play == ""
 
+    // find the cell format and load the cells
+    var cellCollElem = root.element("cell_collection")
+    var format = cellCollElem.attributeValue("format")
+    if (format == null) {
+      Fiber.abort("Element 'cell_collection' missing required attribute 'format'")
+    }
+    if (!CellFormat.all.contains(format)) {
+      Fiber.abort("Unknown cell format '%(format)'")
+    }
     _cellImages = {}
-    for (cellImg in root.element("cell_collection").elements("image").map{|x| CellImage.new(x, dir) }) {
+    for (cellImg in cellCollElem.elements("image").map{|x| CellImage.new(x, dir, format) }) {
       _cellImages[cellImg.name] = cellImg
     }
     // animations without frames are ignored
@@ -132,7 +163,8 @@ class CellAnimationResource {
     for (i in (_animations.count-1)..0) {
       var anim = _animations[i]
       var cellImage = _cellImages[anim.frame.image]
-      for (cell in cellImage.cells) {
+      for (cid in (cellImage.cells.count-1)..0) {
+        var cell = cellImage.cells[cid]
         Canvas.draw(cell.image, x + cell.x, y + cell.y)
       }
     }
