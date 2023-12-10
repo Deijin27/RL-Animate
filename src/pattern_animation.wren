@@ -16,12 +16,9 @@ class KeyFrame {
   palette { _palette }
   
   construct new(element) {
-    var fa = element.attribute("frame")
-    _frame = fa == null ? 0 : Num.fromString(fa.value)
-    var ta = element.attribute("texture")
-    _texture = ta == null ? null : ta.value
-    var pa = element.attribute("palette")
-    _palette = pa == null ? null : pa.value
+    _frame = element.attributeValue("frame", Num, 0)
+    _texture = element.attributeValue("texture")
+    _palette = element.attributeValue("palette")
   }
 }
 
@@ -31,8 +28,7 @@ class PatternAnimationTrack {
 
   construct new(element) {
     _keyFrames = []
-    var mAttr = element.attribute("material")
-    _material = mAttr == null ? null : mAttr.value
+    _material = element.attributeValue("material")
     for (ke in element.elements("key_frame")) {
       _keyFrames.add(KeyFrame.new(ke))
     }
@@ -61,10 +57,8 @@ class PatternAnimation {
   tracks { _tracks }
   
   construct new(element) {
-    var nAttr = element.attribute("name")
-    _name = nAttr == null ? null : nAttr.value
-    var nfAttr = element.attribute("num_frames")
-    _numFrames = nfAttr == null ? 0 : Num.fromString(nfAttr.value)
+    _name = element.attributeValue("name")
+    _numFrames = element.attributeValue("num_frames", Num, 0)
     _tracks = []
     for (te in element.elements("track")) {
       _tracks.add(PatternAnimationTrack.new(te))
@@ -112,16 +106,13 @@ class LibraryPatternAnimationCollection {
   construct new(text) {
     var doc = XDocument.parse(text)
     var root = doc.root
-    var nonRawEl = root.element("library_pattern_animations")
+    var nonRawEl = root.elementOrAbort("library_pattern_animations")
     _library = LibraryPatternAnimations.new(nonRawEl)
-    var rawEl = root.element("library_raw_pattern_animations")
+    var rawEl = root.elementOrAbort("library_raw_pattern_animations")
     _libraryRaw = LibraryPatternAnimations.new(rawEl)
 
-    var laAttr = root.attribute("long_attack")
-    _longAttack = laAttr != null && laAttr.value == "true"
-
-    var asymAttr = root.attribute("asymmetrical")
-    _asymmetrical = asymAttr != null && asymAttr.value == "true"
+    _longAttack = root.attributeValue("long_attack", Bool, false)
+    _asymmetrical = root.attributeValue("asymmetrical", Bool, false)
   }
 
   populateLibraryRawTextures() {

@@ -26,24 +26,22 @@ class Cell {
   image { _image }
 
   construct new(element, image, dir, format) {
-    _x = Num.fromString(element.attribute("x").value)
-    _y = Num.fromString(element.attribute("y").value)
-    _width = Num.fromString(element.attribute("width").value)
-    _height = Num.fromString(element.attribute("height").value)
-    _flipX = element.attributeValue("flip_x") == "true"
-    _flipY = element.attributeValue("flip_y") == "true"
-    _doubleSize = element.attributeValue("double_size") == "true"
+
+    _x = element.attributeValue("x", Num)
+    _y = element.attributeValue("y", Num)
+    _width = element.attributeValue("width", Num)
+    _height = element.attributeValue("height", Num)
+    _flipX = element.attributeValue("flip_x", Bool, false)
+    _flipY = element.attributeValue("flip_y", Bool, false)
+    _doubleSize = element.attributeValue("double_size", Bool, false)
     
     var transform = {}
     if (format == CellFormat.oneImagePerCell) {
-      var file = element.attributeValue("file")
-      if (file == null || file == "") {
-        Fiber.abort("Element 'cell' missing required attribute 'file'. This is required because the format is '%(format)'")
-      }
+      var file = element.attributeValue("file", String)
       image = ImageData.load(dir + "/" + file)
       if (_doubleSize) {
-        transform["scaleX"] = 2
-        transform["scaleY"] = 2
+        transform["scaleX"] = 4/3
+        transform["scaleY"] = 4/3
       }
     } else if (format == CellFormat.oneImagePerBank) {
       transform["srcX"] = x 
@@ -61,13 +59,10 @@ class CellImage {
   cells { _cells }
 
   construct new(element, dir, format) {
-    _name = element.attribute("name").value
-    _file = element.attributeValue("file")
+    _name = element.attributeValue("name", String)
     var image = null
     if (format == CellFormat.oneImagePerBank) {
-      if (_file == null) {
-        Fiber.abort("Element 'image' missing required attribute 'file'. This is required because the format is '%(format)'")
-      }
+      _file = element.attributeValue("file", String)
       var image = ImageData.load(dir  + "/" + file)
     }
     _cells = element.elements("cell").map {|x| Cell.new(x, image, dir, format) }.toList
@@ -79,8 +74,8 @@ class Frame {
   duration { _duration }
   
   construct new(element) {
-    _image = element.attribute("image").value
-    _duration = Num.fromString(element.attribute("duration").value)
+    _image = element.attributeValue("image", String)
+    _duration = element.attributeValue("duration", Num)
   }
 }
 
@@ -90,7 +85,7 @@ class Animation {
   frame { _frame }
 
   construct new(element) {
-    _name = element.attribute("name").value
+    _name = element.attributeValue("name", String)
     Log.debug("Loaded animation %(_name)")
     // frames with zero duration are ignored
     _frames = element.elements("frame").map {|x| Frame.new(x) }.toList.where{|x| x.duration > 0 }.toList
@@ -122,20 +117,14 @@ class CellAnimationResource {
   construct new(file, dir) {
     Log.debug("Loading animation file '%(file)'")
     var document = XDocument.parse(FileSystem.load(file))
-    var root = document.element("nitro_cell_animation_resource")
-    if (root == null) {
-      Fiber.abort("CellAnimationResource document missing root element 'nitro_cell_animation_resource'")
-    }
+    var root = document.elementOrAbort("nitro_cell_animation_resource")
     // decides whether to play the animation. if null or empty we should play all
     var play = root.attributeValue("play")
     var playAll = play == null || play == ""
 
     // find the cell format and load the cells
-    var cellCollElem = root.element("cell_collection")
-    var format = cellCollElem.attributeValue("format")
-    if (format == null) {
-      Fiber.abort("Element 'cell_collection' missing required attribute 'format'")
-    }
+    var cellCollElem = root.elementOrAbort("cell_collection")
+    var format = cellCollElem.attributeValue("format", String)
     if (!CellFormat.all.contains(format)) {
       Fiber.abort("Unknown cell format '%(format)'")
     }
@@ -145,7 +134,7 @@ class CellAnimationResource {
     }
     // animations without frames are ignored
     _animations = []
-    for (anim in root.element("animation_collection").elements("animation").map{|x| Animation.new(x)}) {
+    for (anim in root.elementOrAbort("animation_collection").elements("animation").map{|x| Animation.new(x)}) {
       if (anim.frames.count > 0 && (playAll || play == anim.name)) {
         _animations.add(anim)
       }
