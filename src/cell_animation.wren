@@ -29,8 +29,6 @@ class Cell {
 
     _x = element.attributeValue("x", Num)
     _y = element.attributeValue("y", Num)
-    _width = element.attributeValue("width", Num)
-    _height = element.attributeValue("height", Num)
     _flipX = element.attributeValue("flip_x", Bool, false)
     _flipY = element.attributeValue("flip_y", Bool, false)
     _doubleSize = element.attributeValue("double_size", Bool, false)
@@ -44,6 +42,8 @@ class Cell {
         transform["scaleY"] = 4/3
       }
     } else if (format == CellFormat.oneImagePerBank) {
+      _width = element.attributeValue("width", Num)
+      _height = element.attributeValue("height", Num)
       transform["srcX"] = x 
       transform["srcY"] = y
       transform["srcW"] = width 
@@ -149,9 +149,15 @@ class CellAnimationResource {
 
   draw(x, y) {
     // for some reason the draw order is back-to-front
+    if (_animations.count == 0) {
+      return
+    }
     for (i in (_animations.count-1)..0) {
       var anim = _animations[i]
       var cellImage = _cellImages[anim.frame.image]
+      if (cellImage.cells.count == 0) {
+        continue
+      }
       for (cid in (cellImage.cells.count-1)..0) {
         var cell = cellImage.cells[cid]
         Canvas.draw(cell.image, x + cell.x, y + cell.y)
