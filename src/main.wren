@@ -246,7 +246,7 @@ class Main {
   construct new() { }
   
   init() {
-    Window.title = "PKMDL Previewer v1.0"
+    Window.title = "RL-Animate v1.0"
     AppFont.load()
     
     _reloadButton = Button.new(10, 220, "RELOAD")
