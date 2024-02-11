@@ -221,11 +221,11 @@ class PatternAnimationState is State {
 
 class CellAnimationState is State {
   construct new(dir, animationFile) {
-    var bgFile = dir + "/background.png"
-    if (FileSystem.doesFileExist(bgFile)) {
+    _cellAnimationResource = CellAnimationResource.new(animationFile, dir)
+    if (_cellAnimationResource.background != null) {
+      var bgFile = dir + "/" + _cellAnimationResource.background
       _background = ImageData.load(bgFile)
     }
-    _cellAnimationResource = CellAnimationResource.new(animationFile, dir)
   }
 
   update() {

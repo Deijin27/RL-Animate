@@ -63,7 +63,7 @@ class CellImage {
     var image = null
     if (format == CellFormat.oneImagePerBank) {
       _file = element.attributeValue("file", String)
-      var image = ImageData.load(dir  + "/" + file)
+      image = ImageData.load(dir  + "/" + file)
     }
     _cells = element.elements("cell").map {|x| Cell.new(x, image, dir, format) }.toList
   }
@@ -113,11 +113,13 @@ class Animation {
 class CellAnimationResource {
   cellImages { _cellImages }
   animations { _animations }
+  background { _background }
   
   construct new(file, dir) {
     Log.debug("Loading animation file '%(file)'")
     var document = XDocument.parse(FileSystem.load(file))
     var root = document.elementOrAbort("nitro_cell_animation_resource")
+    _background = root.attributeValue("background")
     // decides whether to play the animation. if null or empty we should play all
     var play = root.attributeValue("play")
     var playAll = play == null || play == ""
