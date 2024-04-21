@@ -1,6 +1,8 @@
 
 # RL-Animate
 
+[![DOME](https://img.shields.io/badge/made%20with-DOME-8d3cff)](https://domeengine.com/)
+
 Preview animations exported by RanseiLink
 
 ## How To Use
@@ -19,8 +21,6 @@ Preview animations exported by RanseiLink
 1. Launch the .exe
 1. As you modify the images and animation, save the changes and click "RELOAD" to load up the modified files
 
-![screenshot](https://user-images.githubusercontent.com/40903783/189527807-3fd42418-f0b7-42dc-92ba-8a74cc4fa6f6.gif)
+![leafeon screenshot](https://user-images.githubusercontent.com/40903783/189527807-3fd42418-f0b7-42dc-92ba-8a74cc4fa6f6.gif)
 
----
-
-[![DOME](https://img.shields.io/badge/made%20with-DOME-8d3cff)](https://domeengine.com/)
+![aurora screenshot](https://github.com/Deijin27/RL-Animate/assets/40903783/21d3f66e-947e-47d7-8500-d3c9dfab55cd)
