@@ -12,8 +12,8 @@ import "dome" for Log
 
 class CellFormat {
   static oneImagePerCell { "OneImagePerCell" }
-  static oneImagePerBank { "OneImagePerBank" }
-  static all { [oneImagePerCell, oneImagePerBank] }
+  static oneImagePerCluster { "OneImagePerCluster" }
+  static all { [oneImagePerCell, oneImagePerCluster] }
 }
 
 class Cell {
@@ -41,7 +41,7 @@ class Cell {
         transform["scaleX"] = 4/3
         transform["scaleY"] = 4/3
       }
-    } else if (format == CellFormat.oneImagePerBank) {
+    } else if (format == CellFormat.oneImagePerCluster) {
       _width = element.attributeValue("width", Num)
       _height = element.attributeValue("height", Num)
       transform["srcX"] = x 
@@ -53,7 +53,7 @@ class Cell {
   }
 }
 
-class CellImage {
+class Cluster {
   name { _name }
   file { _file }
   cells { _cells }
@@ -61,7 +61,7 @@ class CellImage {
   construct new(element, dir, format) {
     _name = element.attributeValue("name", String)
     var image = null
-    if (format == CellFormat.oneImagePerBank) {
+    if (format == CellFormat.oneImagePerCluster) {
       _file = element.attributeValue("file", String)
       image = ImageData.load(dir  + "/" + file)
     }
@@ -70,11 +70,11 @@ class CellImage {
 }
 
 class Frame {
-  image { _image }
+  cluster { _cluster }
   duration { _duration }
   
   construct new(element) {
-    _image = element.attributeValue("image", String)
+    _cluster = element.attributeValue("cluster", String)
     _duration = element.attributeValue("duration", Num)
   }
 }
@@ -111,7 +111,7 @@ class Animation {
 }
 
 class CellAnimationResource {
-  cellImages { _cellImages }
+  cellImages { _clusters }
   animations { _animations }
   background { _background }
   
@@ -130,9 +130,9 @@ class CellAnimationResource {
     if (!CellFormat.all.contains(format)) {
       Fiber.abort("Unknown cell format '%(format)'")
     }
-    _cellImages = {}
-    for (cellImg in cellCollElem.elements("image").map{|x| CellImage.new(x, dir, format) }) {
-      _cellImages[cellImg.name] = cellImg
+    _clusters = {}
+    for (cellImg in cellCollElem.elements("cluster").map{|x| Cluster.new(x, dir, format) }) {
+      _clusters[cellImg.name] = cellImg
     }
     // animations without frames are ignored
     _animations = []
@@ -156,12 +156,12 @@ class CellAnimationResource {
     }
     for (i in (_animations.count-1)..0) {
       var anim = _animations[i]
-      var cellImage = _cellImages[anim.frame.image]
-      if (cellImage.cells.count == 0) {
+      var cluster = _clusters[anim.frame.cluster]
+      if (cluster.cells.count == 0) {
         continue
       }
-      for (cid in (cellImage.cells.count-1)..0) {
-        var cell = cellImage.cells[cid]
+      for (cid in (cluster.cells.count-1)..0) {
+        var cell = cluster.cells[cid]
         Canvas.draw(cell.image, x + cell.x, y + cell.y)
       }
     }
