@@ -16,14 +16,21 @@ class AppFont {
   static smallBold { "smallBold" }
 
   static load() {
-    Font.load(small, "fonts/pixelmix.ttf", 8)
+    //Font.load(small, "fonts/pixelmix.ttf", 8)
+    Font.load(small, "fonts/gorgeousjr.ttf", 16)
     Canvas.font = small
   }
 }
 
 class AppColor {
-  static background { Color.hex("#191919") }
+  //static background { Color.hex("#1E1E2E") }
+  //static foreground { Color.hex("#cdd6f4")}
+  //static background { Color.hex("#191919") }
+  static domePurple { Color.hex("#8D3BFF") }
+  static background { Color.black }
   static foreground { Color.white }
+  static buttonForeground { Color.white }
+  static buttonBackground { AppColor.domePurple }
 }
 
 class AnimationType {
@@ -165,8 +172,8 @@ class Button {
     _justPressed = Mouse["left"].justPressed && Mouse.x > _x && Mouse.y > _y && Mouse.x < (_x + _width) && Mouse.y < (_y + _height)
   }
   draw(dt) {
-    Canvas.rectfill(_x, _y, _width, _height, AppColor.foreground)
-    Canvas.print(_text, _x + 2, _y + 2, AppColor.background)
+    Canvas.rectfill(_x, _y, _width, _height, AppColor.buttonBackground)
+    Canvas.print(_text, _x + 2, _y + 2, AppColor.buttonForeground)
   }
 }
 
@@ -178,7 +185,7 @@ class State {
 class FilesMissingState is State {
   construct new() {}
   draw(dt) {
-    Canvas.print("Files Missing. Place an animation file, \nand a sprite sheet in the folder next\n to the application", 50, 50, AppColor.foreground)
+    Canvas.print("Files Missing. Place an animation file, \nand a sprite sheet in the folder next\nto the application", 50, 50, AppColor.foreground)
   }
 }
 
