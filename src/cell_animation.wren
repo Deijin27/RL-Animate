@@ -67,6 +67,16 @@ class Cluster {
     }
     _cells = element.elements("cell").map {|x| Cell.new(x, image, dir, format) }.toList
   }
+
+  draw(x, y) {
+    if (cells.count == 0) {
+        return
+      }
+    for (cid in (cells.count-1)..0) {
+      var cell = cells[cid]
+      Canvas.draw(cell.image, x + cell.x, y + cell.y)
+    }
+  }
 }
 
 class Frame {
@@ -111,9 +121,18 @@ class Animation {
 }
 
 class CellAnimationResource {
-  cellImages { _clusters }
+  clusters { _clusters }
   animations { _animations }
   background { _background }
+
+  findCluster(name) {
+    for (cluster in clusters) {
+      if (cluster.name == name) {
+        return cluster
+      }
+    }
+    return null
+  }
   
   construct new(file, dir) {
     Log.debug("Loading animation file '%(file)'")
@@ -130,9 +149,9 @@ class CellAnimationResource {
     if (!CellFormat.all.contains(format)) {
       Fiber.abort("Unknown cell format '%(format)'")
     }
-    _clusters = {}
-    for (cellImg in cellCollElem.elements("cluster").map{|x| Cluster.new(x, dir, format) }) {
-      _clusters[cellImg.name] = cellImg
+    _clusters = []
+    for (clust in cellCollElem.elements("cluster").map{|x| Cluster.new(x, dir, format) }) {
+      _clusters.add(clust)
     }
     // animations without frames are ignored
     _animations = []
@@ -155,15 +174,13 @@ class CellAnimationResource {
       return
     }
     for (i in (_animations.count-1)..0) {
-      var anim = _animations[i]
-      var cluster = _clusters[anim.frame.cluster]
-      if (cluster.cells.count == 0) {
-        continue
-      }
-      for (cid in (cluster.cells.count-1)..0) {
-        var cell = cluster.cells[cid]
-        Canvas.draw(cell.image, x + cell.x, y + cell.y)
-      }
+      drawAnimation(x, y, i)
     }
+  }
+
+  drawAnimation(x, y, index) {
+    var anim = _animations[index]
+    var cluster = findCluster(anim.frame.cluster)
+    cluster.draw(x, y)
   }
 }

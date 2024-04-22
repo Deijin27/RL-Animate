@@ -8,30 +8,9 @@ import "io" for FileSystem
 import "pattern_animation" for LibraryPatternAnimationCollection
 import "cell_animation" for CellAnimationResource
 import "dome" for Process, Window, Log
+import "controls" for AppColor, Button, AppFont
 
 Log.level = "DEBUG"
-
-class AppFont {
-  static small { "small" }
-  static smallBold { "smallBold" }
-
-  static load() {
-    //Font.load(small, "fonts/pixelmix.ttf", 8)
-    Font.load(small, "fonts/gorgeousjr.ttf", 16)
-    Canvas.font = small
-  }
-}
-
-class AppColor {
-  //static background { Color.hex("#1E1E2E") }
-  //static foreground { Color.hex("#cdd6f4")}
-  //static background { Color.hex("#191919") }
-  static domePurple { Color.hex("#8D3BFF") }
-  static background { Color.black }
-  static foreground { Color.white }
-  static buttonForeground { Color.white }
-  static buttonBackground { AppColor.domePurple }
-}
 
 class AnimationType {
   static walk { "A" }
@@ -150,32 +129,7 @@ class AnimationDisplay {
   }
 }
 
-class Button {
-  construct new(x, y, text) {
-    _justPressed = false
-    _text = text
-    _x = x
-    _y = y
-    var area = Font[AppFont.small].getArea(_text)
-    _width = area.x + 4
-    _height = area.y + 4
-  }
 
-  text { _text }
-  x { _x }
-  y { _y }
-  width { _width }
-  height  { _height }
-  justPressed { _justPressed }
-
-  update() {
-    _justPressed = Mouse["left"].justPressed && Mouse.x > _x && Mouse.y > _y && Mouse.x < (_x + _width) && Mouse.y < (_y + _height)
-  }
-  draw(dt) {
-    Canvas.rectfill(_x, _y, _width, _height, AppColor.buttonBackground)
-    Canvas.print(_text, _x + 2, _y + 2, AppColor.buttonForeground)
-  }
-}
 
 class State {
   update() {}
@@ -226,26 +180,176 @@ class PatternAnimationState is State {
   }
 }
 
+class AnimationPanel {
+  construct new(cellAnimationResource) {
+    _cellAnimationResource = cellAnimationResource
+    _selection = -1
+  }
+
+  selection { _selection }
+
+  update() {
+    if (Keyboard["down"].justPressed) {
+      if (_selection < _cellAnimationResource.animations.count - 1) {
+        _selection = _selection + 1
+      }
+    } else if (Keyboard["up"].justPressed) {
+      if (_selection > -1) {
+        _selection = _selection - 1
+      }
+    }
+  }
+
+  draw(x, y) {
+    drawAnimationsList(x + 15, y + 130)
+
+    if (_selection != -1) {
+      drawFramesList(x + 80, y + 130, _cellAnimationResource.animations[_selection])
+    }
+  }
+
+  drawAnimationsList(x, y) {
+    Canvas.print("ANIMATIONS", x, y, AppColor.domePurple)
+    y = y + 10
+    Canvas.print("all", x, y, AppColor.foreground)
+    y = y + 10
+
+    if (_cellAnimationResource.animations.count == 0) {
+      Canvas.print("no animations", x, y, AppColor.gray)
+    } else {
+      for (i in 0..._cellAnimationResource.animations.count) {
+        var anim = _cellAnimationResource.animations[i]
+        Canvas.print(anim.name, x, y + i * 10, AppColor.foreground)
+      }
+    }
+    Canvas.circle(x - 6, y + (_selection * 10) + 2, 2, AppColor.domePurple)
+  }
+
+  drawFramesList(x, y, animation) {
+    Canvas.print("FRAMES", x, y, AppColor.domePurple)
+    y = y + 10
+
+    if (animation.frames.count == 0) {
+      Canvas.print("no animations", x, y, AppColor.gray)
+    } else {
+      for (i in 0...animation.frames.count) {
+        var frame = animation.frames[i]
+        var fY = y + i * 10
+        Canvas.print(frame.cluster, x, fY, AppColor.foreground)
+        Canvas.print(frame.duration.toString, x + 40, fY, AppColor.foreground)
+      }
+    }
+  }
+}
+
+class ClusterPanel {
+  construct new(cellAnimationResource) {
+    _cellAnimationResource = cellAnimationResource
+    _selection = -1
+  }
+
+  selection { _selection }
+
+  update() {
+    if (Keyboard["down"].justPressed) {
+      if (_selection < _cellAnimationResource.clusters.count - 1) {
+        _selection = _selection + 1
+      }
+    } else if (Keyboard["up"].justPressed) {
+      if (_selection > -1) {
+        _selection = _selection - 1
+      }
+    }
+  }
+
+  draw(x, y) {
+    drawClustersList(x + 15, y + 130)
+
+    if (_selection != -1) {
+      drawCellsList(x + 80, y + 130, _cellAnimationResource.clusters[_selection])
+    }
+  }
+
+  drawClustersList(x, y) {
+    Canvas.print("CLUSTERS", x, y, AppColor.domePurple)
+    y = y + 10
+    Canvas.print("all", x, y, AppColor.foreground)
+    y = y + 10
+
+    if (_cellAnimationResource.clusters.count == 0) {
+      Canvas.print("no clusters", x, y, AppColor.gray)
+    } else {
+      for (i in 0..._cellAnimationResource.clusters.count) {
+        var clust = _cellAnimationResource.clusters[i]
+        Canvas.print(clust.name, x, y + i * 10, AppColor.foreground)
+      }
+    }
+    Canvas.circle(x - 6, y + (_selection * 10) + 2, 2, AppColor.domePurple)
+  }
+
+  drawCellsList(x, y, cluster) {
+    Canvas.print("CELLS", x, y, AppColor.domePurple)
+    y = y + 10
+
+    if (cluster.cells.count == 0) {
+      Canvas.print("no cells", x, y, AppColor.gray)
+    } else {
+      for (i in 0...cluster.cells.count) {
+        var cell = cluster.cells[i]
+        var cY = y + i * 10
+        Canvas.print("[%(cell.x),%(cell.y),%(cell.width),%(cell.height)]", x, cY, AppColor.foreground)
+      }
+    }
+    
+    
+  }
+}
+
 class CellAnimationState is State {
   construct new(dir, animationFile) {
+    _drawBackground = true
     _cellAnimationResource = CellAnimationResource.new(animationFile, dir)
     if (_cellAnimationResource.background != null) {
       var bgFile = dir + "/" + _cellAnimationResource.background
       _background = ImageData.load(bgFile)
     }
+
+    _animationPanel = AnimationPanel.new(_cellAnimationResource)
+    _clusterPanel = ClusterPanel.new(_cellAnimationResource)
+    _currentPanel = _animationPanel
   }
 
   update() {
     _cellAnimationResource.update()
+    if (Keyboard["b"].justPressed) {
+      _drawBackground = !_drawBackground
+    }
+    if (Keyboard["p"].justPressed) {
+      if (_currentPanel == _animationPanel) {
+        _currentPanel = _clusterPanel
+      } else {
+        _currentPanel = _animationPanel
+      }
+    }
+    _currentPanel.update()
   }
 
   draw(dt) {
-    var x = 10
-    var y = 10
-    if (_background != null) {
+    var x = 0
+    var y = 0
+    if (_background != null && _drawBackground) {
       Canvas.draw(_background, x, y)
     }
-    _cellAnimationResource.draw(x, y)
+
+    if (_currentPanel.selection == -1) {
+      _cellAnimationResource.draw(x, y)
+    } else if (_currentPanel == _animationPanel) {
+      _cellAnimationResource.drawAnimation(x, y, _animationPanel.selection)
+    } else {
+      _cellAnimationResource.clusters[_clusterPanel.selection].draw(x, y)
+    }
+
+    _currentPanel.draw(x, y)
   }
 }
 
