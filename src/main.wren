@@ -9,6 +9,7 @@ import "pattern_animation" for LibraryPatternAnimationCollection
 import "cell_animation" for CellAnimationResource
 import "dome" for Process, Window, Log
 import "controls" for AppColor, Button, AppFont
+import "math" for Math
 
 Log.level = "DEBUG"
 
@@ -129,7 +130,36 @@ class AnimationDisplay {
   }
 }
 
+class Hotkey {
+  construct new(name, key) {
+    _name = name
+    _key = key
+  }
 
+  name { _name }
+  key { _key }
+
+  justPressed {
+    return Keyboard[key].justPressed
+  }
+
+  static [name] {
+    var hk = __hotkeys[name]
+    if (hk == null) {
+      Fiber.abort("No hotkey found of name %(name)")
+    }
+    return hk
+  }
+
+  static register(name, key) {
+    __hotkeys[name] = Hotkey.new(name, key)
+  }
+
+  static init_() {
+    __hotkeys = {}
+  }
+}
+Hotkey.init_()
 
 class State {
   update() {}
@@ -180,128 +210,206 @@ class PatternAnimationState is State {
   }
 }
 
-class AnimationPanel {
-  construct new(cellAnimationResource) {
-    _cellAnimationResource = cellAnimationResource
-    _selection = -1
+class Selector {
+  construct new(min, max, init) {
+    _selection = init
+    _min = min
+    _max = max
   }
 
   selection { _selection }
 
   update() {
-    if (Keyboard["down"].justPressed) {
-      if (_selection < _cellAnimationResource.animations.count - 1) {
-        _selection = _selection + 1
-      }
-    } else if (Keyboard["up"].justPressed) {
-      if (_selection > -1) {
-        _selection = _selection - 1
+    
+  }
+}
+
+class ListView {
+  construct new(title, items, drawItemFn) {
+    _title = title
+    _items = items
+    _selectedIndex = 0
+    _isFocused = true
+    _drawItemFn = drawItemFn
+    _visibleItemCapacity = 7
+    _scrollPosition = 0
+  }
+
+  title { _title }
+  isFocused { _isFocused }
+  isFocused=(value) { _isFocused = value }
+  selectedIndex { _selectedIndex }
+  selectedItem { _items.count > 0 ? _items[_selectedIndex] : null }
+
+  items { _items }
+  items=(value) { _items = value }
+
+  requiresScrollBar { _items.count > _visibleItemCapacity }
+
+  update() {
+    if (Hotkey["down"].justPressed) {
+      _selectedIndex = _selectedIndex + 1
+    } else if (Hotkey["up"].justPressed) {
+      _selectedIndex = _selectedIndex - 1
+    }
+    _selectedIndex = Math.clamp(_selectedIndex, 0, _items.count - 1)
+
+    if (requiresScrollBar) {
+      if (_selectedIndex >= (_scrollPosition + _visibleItemCapacity)) {
+        _scrollPosition = _selectedIndex - _visibleItemCapacity + 1
+      } else if (_selectedIndex <= _scrollPosition) {
+        _scrollPosition = _selectedIndex
       }
     }
   }
 
   draw(x, y) {
-    drawAnimationsList(x + 15, y + 130)
+    Canvas.print(title, x + 6, y, isFocused ? AppColor.domePurple : AppColor.gray)
+    y = y + 10
 
-    if (_selection != -1) {
-      drawFramesList(x + 80, y + 130, _cellAnimationResource.animations[_selection])
+    if (_items.count == 0) {
+      Canvas.print("no items", x + 6, y, AppColor.gray)
+    } else {
+      var itemY = y
+      for (drawIndex in 0..._visibleItemCapacity) {
+        var itemIndex = _scrollPosition + drawIndex
+        if (itemIndex >= _items.count) {
+          break
+        }
+        if (itemIndex == selectedIndex) {
+          drawSelectionIndicator(x, itemY)
+        }
+        _drawItemFn.call(items[itemIndex], x + 6, itemY)
+        itemY = itemY + 10
+      }
+    }
+    if (requiresScrollBar) {
+      drawScrollBar(x, y)
     }
   }
 
-  drawAnimationsList(x, y) {
-    Canvas.print("ANIMATIONS", x, y, AppColor.domePurple)
-    y = y + 10
-    Canvas.print("all", x, y, AppColor.foreground)
-    y = y + 10
-
-    if (_cellAnimationResource.animations.count == 0) {
-      Canvas.print("no animations", x, y, AppColor.gray)
-    } else {
-      for (i in 0..._cellAnimationResource.animations.count) {
-        var anim = _cellAnimationResource.animations[i]
-        Canvas.print(anim.name, x, y + i * 10, AppColor.foreground)
-      }
-    }
-    Canvas.circle(x - 6, y + (_selection * 10) + 2, 2, AppColor.domePurple)
+  drawSelectionIndicator(x, y) {
+    Canvas.circle(x, y + 2, 2, isFocused ? AppColor.domePurple : AppColor.gray)
   }
 
-  drawFramesList(x, y, animation) {
-    Canvas.print("FRAMES", x, y, AppColor.domePurple)
-    y = y + 10
+  drawScrollBar(x, y) {
+    // draw the border of the scroll bar
+    x = x + 50
+    var sbHeight = _visibleItemCapacity * 10 - 4
+    var sbWidth = 4
+    Canvas.rect(x, y, sbWidth, sbHeight, AppColor.foreground)
+    // draw the filled in section indicating current focus
+    var fillHeight = _visibleItemCapacity / _items.count * sbHeight
+    var fillY = y + (_scrollPosition / _items.count * sbHeight)
+    Canvas.rectfill(x, fillY, sbWidth, fillHeight, AppColor.foreground)
+  }
+}
 
-    if (animation.frames.count == 0) {
-      Canvas.print("no animations", x, y, AppColor.gray)
-    } else {
-      for (i in 0...animation.frames.count) {
-        var frame = animation.frames[i]
-        var fY = y + i * 10
-        Canvas.print(frame.cluster, x, fY, AppColor.foreground)
-        Canvas.print(frame.duration.toString, x + 40, fY, AppColor.foreground)
-      }
+class AnimationPanel {
+  construct new(cellAnimationResource) {
+    _res = cellAnimationResource
+    _frameListFocused = false
+
+    _animationsList = ListView.new("ANIMATIONS", _res.animations) {|item, x, y| 
+      Canvas.print(item.name, x, y, AppColor.foreground)
     }
+    _framesList = ListView.new("FRAMES", []) {|item, x, y| 
+      Canvas.print(item.cluster, x, y, AppColor.foreground)
+      Canvas.print(item.duration.toString, x + 40, y, AppColor.foreground)
+    }
+    _framesList.isFocused = false
+  }
+
+  selection { _animationsList.selectedIndex }
+  framesListFocused { _framesList.isFocused }
+  selectedAnim { _animationsList.selectedItem }
+  selectedFrame { _framesList.selectedItem }
+
+  update() {
+    if (_animationsList.isFocused) {
+      updateAnimFocused()
+    } else {
+      updateFrameFocused()
+    }
+  }
+
+  updateAnimFocused() {
+    if (Keyboard["return"].justPressed) {
+      // select frame
+      _framesList.isFocused = true
+      _animationsList.isFocused = false
+    } else {
+      _animationsList.update()
+      _framesList.items = _animationsList.selectedItem.frames
+    }
+  }
+
+  updateFrameFocused() {
+    if (Keyboard["escape"].justPressed) {
+      // return to animations list
+      _framesList.isFocused = false
+      _animationsList.isFocused = true
+    } else {
+      _framesList.update()
+    }
+  }
+
+  draw(x, y) {
+    _animationsList.draw(x + 15, y + 130)
+    _framesList.draw(x + 80, y + 130)
   }
 }
 
 class ClusterPanel {
   construct new(cellAnimationResource) {
-    _cellAnimationResource = cellAnimationResource
-    _selection = -1
+    _res = cellAnimationResource
+    
+    _clustersList = ListView.new("CLUSTERS", _res.clusters) {|item, x, y| 
+      Canvas.print(item.name, x, y, AppColor.foreground)
+    }
+    _cellsList = ListView.new("CELLS", []) {|item, x, y| 
+      Canvas.print("[%(item.x),%(item.y),%(item.width),%(item.height)]", x, y, AppColor.foreground)
+    }
+    _cellsList.isFocused = false
   }
 
-  selection { _selection }
+  selection { _clustersList.selectedIndex }
+  selectedCluster { _clustersList.selectedItem }
+  cellsListFocused { _cellsList.isFocused }
+  selectedCell { _cellsList.selectedItem }
 
   update() {
-    if (Keyboard["down"].justPressed) {
-      if (_selection < _cellAnimationResource.clusters.count - 1) {
-        _selection = _selection + 1
-      }
-    } else if (Keyboard["up"].justPressed) {
-      if (_selection > -1) {
-        _selection = _selection - 1
-      }
+    if (_clustersList.isFocused) {
+      updateClustersFocused()
+    } else {
+      updateCellsFocused()
+    }
+  }
+
+  updateClustersFocused() {
+    if (Keyboard["return"].justPressed) {
+      // select frame
+      _cellsList.isFocused = true
+      _clustersList.isFocused = false
+    } else {
+      _clustersList.update()
+      _cellsList.items = _clustersList.selectedItem.cells
+    }
+  }
+
+  updateCellsFocused() {
+    if (Keyboard["escape"].justPressed) {
+      // return to animations list
+      _cellsList.isFocused = false
+      _clustersList.isFocused = true
+    } else {
+      _cellsList.update()
     }
   }
 
   draw(x, y) {
-    drawClustersList(x + 15, y + 130)
-
-    if (_selection != -1) {
-      drawCellsList(x + 80, y + 130, _cellAnimationResource.clusters[_selection])
-    }
-  }
-
-  drawClustersList(x, y) {
-    Canvas.print("CLUSTERS", x, y, AppColor.domePurple)
-    y = y + 10
-    Canvas.print("all", x, y, AppColor.foreground)
-    y = y + 10
-
-    if (_cellAnimationResource.clusters.count == 0) {
-      Canvas.print("no clusters", x, y, AppColor.gray)
-    } else {
-      for (i in 0..._cellAnimationResource.clusters.count) {
-        var clust = _cellAnimationResource.clusters[i]
-        Canvas.print(clust.name, x, y + i * 10, AppColor.foreground)
-      }
-    }
-    Canvas.circle(x - 6, y + (_selection * 10) + 2, 2, AppColor.domePurple)
-  }
-
-  drawCellsList(x, y, cluster) {
-    Canvas.print("CELLS", x, y, AppColor.domePurple)
-    y = y + 10
-
-    if (cluster.cells.count == 0) {
-      Canvas.print("no cells", x, y, AppColor.gray)
-    } else {
-      for (i in 0...cluster.cells.count) {
-        var cell = cluster.cells[i]
-        var cY = y + i * 10
-        Canvas.print("[%(cell.x),%(cell.y),%(cell.width),%(cell.height)]", x, cY, AppColor.foreground)
-      }
-    }
-    
-    
+    _clustersList.draw(x + 15, y + 130)
+    _cellsList.draw(x + 80, y + 130)
   }
 }
 
@@ -317,14 +425,18 @@ class CellAnimationState is State {
     _animationPanel = AnimationPanel.new(_cellAnimationResource)
     _clusterPanel = ClusterPanel.new(_cellAnimationResource)
     _currentPanel = _animationPanel
+    _all = true
   }
 
   update() {
     _cellAnimationResource.update()
-    if (Keyboard["b"].justPressed) {
+    if (Keyboard["a"].justPressed) {
+      _all = !_all
+    }
+    if (Hotkey["toggleBackground"].justPressed) {
       _drawBackground = !_drawBackground
     }
-    if (Keyboard["p"].justPressed) {
+    if (Hotkey["switchMode"].justPressed) {
       if (_currentPanel == _animationPanel) {
         _currentPanel = _clusterPanel
       } else {
@@ -341,12 +453,23 @@ class CellAnimationState is State {
       Canvas.draw(_background, x, y)
     }
 
-    if (_currentPanel.selection == -1) {
+    if (_all) {
       _cellAnimationResource.draw(x, y)
     } else if (_currentPanel == _animationPanel) {
-      _cellAnimationResource.drawAnimation(x, y, _animationPanel.selection)
+      if (_animationPanel.framesListFocused) {
+        _cellAnimationResource.findCluster(_animationPanel.selectedFrame.cluster).draw(x, y)
+      } else {
+        _cellAnimationResource.drawAnimation(x, y, _animationPanel.selection)
+      }
     } else {
-      _cellAnimationResource.clusters[_clusterPanel.selection].draw(x, y)
+      _clusterPanel.selectedCluster.draw(x, y)
+    }
+
+    if (_currentPanel == _clusterPanel && _clusterPanel.cellsListFocused) {
+      var selectedCell = _clusterPanel.selectedCell
+      for (cell in _clusterPanel.selectedCluster.cells) {
+        Canvas.rect(cell.x, cell.y, cell.width, cell.height, cell == selectedCell ? AppColor.domePurple : AppColor.gray)
+      }
     }
 
     _currentPanel.draw(x, y)
@@ -359,6 +482,13 @@ class Main {
   init() {
     Window.title = "RL-Animate v1.0"
     AppFont.load()
+
+    Hotkey.register("up", "up")
+    Hotkey.register("down", "down")
+    Hotkey.register("left", "left")
+    Hotkey.register("right", "right")
+    Hotkey.register("toggleBackground", "b")
+    Hotkey.register("switchMode", "tab")
     
     _reloadButton = Button.new(10, 220, "RELOAD")
     reload()
