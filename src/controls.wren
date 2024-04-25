@@ -1,6 +1,38 @@
 import "graphics" for Canvas, Color, Font
-import "input" for Mouse
+import "input" for Mouse, Keyboard
 import "dome" for Log
+import "math" for Math
+
+class Hotkey {
+  construct new(name, key) {
+    _name = name
+    _key = key
+  }
+
+  name { _name }
+  key { _key }
+
+  justPressed {
+    return Keyboard[key].justPressed
+  }
+
+  static [name] {
+    var hk = __hotkeys[name]
+    if (hk == null) {
+      Fiber.abort("No hotkey found of name %(name)")
+    }
+    return hk
+  }
+
+  static register(name, key) {
+    __hotkeys[name] = Hotkey.new(name, key)
+  }
+
+  static init_() {
+    __hotkeys = {}
+  }
+}
+Hotkey.init_()
 
 class AppFont {
   static small { "small" }
@@ -84,3 +116,86 @@ class ToggleButton {
 
   }
 }
+
+
+class ListView {
+  construct new(title, items, drawItemFn) {
+    _title = title
+    _items = items
+    _selectedIndex = 0
+    _isFocused = true
+    _drawItemFn = drawItemFn
+    _visibleItemCapacity = 7
+    _scrollPosition = 0
+  }
+
+  title { _title }
+  isFocused { _isFocused }
+  isFocused=(value) { _isFocused = value }
+  selectedIndex { _selectedIndex }
+  selectedItem { _items.count > 0 ? _items[_selectedIndex] : null }
+
+  items { _items }
+  items=(value) { _items = value }
+
+  requiresScrollBar { _items.count > _visibleItemCapacity }
+
+  update() {
+    if (Hotkey["down"].justPressed) {
+      _selectedIndex = _selectedIndex + 1
+    } else if (Hotkey["up"].justPressed) {
+      _selectedIndex = _selectedIndex - 1
+    }
+    _selectedIndex = Math.clamp(_selectedIndex, 0, _items.count - 1)
+
+    if (requiresScrollBar) {
+      if (_selectedIndex >= (_scrollPosition + _visibleItemCapacity)) {
+        _scrollPosition = _selectedIndex - _visibleItemCapacity + 1
+      } else if (_selectedIndex <= _scrollPosition) {
+        _scrollPosition = _selectedIndex
+      }
+    }
+  }
+
+  draw(x, y) {
+    Canvas.print(title, x + 6, y, isFocused ? AppColor.domePurple : AppColor.gray)
+    y = y + 10
+
+    if (_items.count == 0) {
+      Canvas.print("no items", x + 6, y, AppColor.gray)
+    } else {
+      var itemY = y
+      for (drawIndex in 0..._visibleItemCapacity) {
+        var itemIndex = _scrollPosition + drawIndex
+        if (itemIndex >= _items.count) {
+          break
+        }
+        if (itemIndex == selectedIndex) {
+          drawSelectionIndicator(x, itemY)
+        }
+        _drawItemFn.call(items[itemIndex], x + 6, itemY)
+        itemY = itemY + 10
+      }
+    }
+    if (requiresScrollBar) {
+      drawScrollBar(x, y)
+    }
+  }
+
+  drawSelectionIndicator(x, y) {
+    Canvas.circle(x, y + 2, 2, isFocused ? AppColor.domePurple : AppColor.gray)
+  }
+
+  drawScrollBar(x, y) {
+    // draw the border of the scroll bar
+    x = x + 50
+    var sbHeight = _visibleItemCapacity * 10 - 4
+    var sbWidth = 4
+    Canvas.rect(x, y, sbWidth, sbHeight, AppColor.foreground)
+    // draw the filled in section indicating current focus
+    var fillHeight = _visibleItemCapacity / _items.count * sbHeight
+    var fillY = y + (_scrollPosition / _items.count * sbHeight)
+    Canvas.rectfill(x, fillY, sbWidth, fillHeight, AppColor.foreground)
+  }
+}
+
