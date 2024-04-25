@@ -35,7 +35,7 @@ class AnimationPanel {
   }
 
   updateAnimFocused() {
-    if (Keyboard["return"].justPressed) {
+    if (Hotkey["navigateForward"].justPressed) {
       // select frame
       _framesList.isFocused = true
       _animationsList.isFocused = false
@@ -46,7 +46,7 @@ class AnimationPanel {
   }
 
   updateFrameFocused() {
-    if (Keyboard["escape"].justPressed) {
+    if (Hotkey["navigateBack"].justPressed) {
       // return to animations list
       _framesList.isFocused = false
       _animationsList.isFocused = true
@@ -89,7 +89,7 @@ class ClusterPanel {
   }
 
   updateClustersFocused() {
-    if (Keyboard["return"].justPressed) {
+    if (Hotkey["navigateForward"].justPressed) {
       // select frame
       _cellsList.isFocused = true
       _clustersList.isFocused = false
@@ -100,7 +100,7 @@ class ClusterPanel {
   }
 
   updateCellsFocused() {
-    if (Keyboard["escape"].justPressed) {
+    if (Hotkey["navigateBack"].justPressed) {
       // return to animations list
       _cellsList.isFocused = false
       _clustersList.isFocused = true
@@ -132,7 +132,7 @@ class CellAnimationState {
 
   update() {
     _cellAnimationResource.update()
-    if (Keyboard["a"].justPressed) {
+    if (Hotkey["toggleAllAnimations"].justPressed) {
       _all = !_all
     }
     if (Hotkey["toggleBackground"].justPressed) {

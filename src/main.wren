@@ -35,6 +35,9 @@ class Main {
     Hotkey.register("right", "right")
     Hotkey.register("toggleBackground", "b")
     Hotkey.register("switchMode", "tab")
+    Hotkey.register("navigateForward", "return")
+    Hotkey.register("navigateBack", "escape")
+    Hotkey.register("toggleAllAnimations", "a")
     
     _reloadButton = Button.new(10, 220, "RELOAD")
     reload()

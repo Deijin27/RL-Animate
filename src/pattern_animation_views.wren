@@ -4,7 +4,6 @@ import "io" for FileSystem
 import "pattern_animation" for LibraryPatternAnimationCollection
 import "dome" for Process, Window, Log
 import "controls" for AppColor, Button, AppFont, ListView
-import "cell_animation_views" for CellAnimationState
 
 class AnimationType {
   static walk { "A" }
