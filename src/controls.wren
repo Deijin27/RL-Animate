@@ -12,9 +12,10 @@ class Hotkey {
   name { _name }
   key { _key }
 
-  justPressed {
-    return Keyboard[key].justPressed
-  }
+  justPressed { Keyboard[key].justPressed }
+  down { Keyboard[key].down }
+  previous { Keyboard[key].previous }
+  repeats { Keyboard[key].repeats }
 
   static [name] {
     var hk = __hotkeys[name]
@@ -141,7 +142,17 @@ class ListView {
   requiresScrollBar { _items.count > _visibleItemCapacity }
 
   update() {
-    if (Hotkey["down"].justPressed) {
+    var downRepeats = Hotkey["down"].repeats
+    var upRepeats = Hotkey["up"].repeats
+    if (downRepeats > 20) {
+      if (downRepeats % 5 == 0) {
+        _selectedIndex = _selectedIndex + 1
+      }
+    } else if (upRepeats > 40) {
+      if (upRepeats % 5 == 0) {
+        _selectedIndex = _selectedIndex - 1
+      }
+    } else if (Hotkey["down"].justPressed) {
       _selectedIndex = _selectedIndex + 1
     } else if (Hotkey["up"].justPressed) {
       _selectedIndex = _selectedIndex - 1

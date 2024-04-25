@@ -167,10 +167,10 @@ class CellAnimationState {
       _clusterPanel.selectedCluster.draw(x, y)
     }
 
-    if (_currentPanel == _clusterPanel && _clusterPanel.cellsListFocused) {
+    if (_currentPanel == _clusterPanel) {
       var selectedCell = _clusterPanel.selectedCell
       for (cell in _clusterPanel.selectedCluster.cells) {
-        Canvas.rect(cell.x, cell.y, cell.width, cell.height, cell == selectedCell ? AppColor.domePurple : AppColor.gray)
+        Canvas.rect(cell.x, cell.y, cell.width, cell.height, (_clusterPanel.cellsListFocused && cell == selectedCell) ? AppColor.domePurple : AppColor.gray)
       }
     }
 
