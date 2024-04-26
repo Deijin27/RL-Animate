@@ -149,8 +149,8 @@ class CellAnimationState {
   }
 
   draw(dt) {
-    var x = 0
-    var y = 0
+    var x = 10
+    var y = 10
     if (_background != null && _drawBackground) {
       Canvas.draw(_background, x, y)
     }
@@ -170,7 +170,7 @@ class CellAnimationState {
     if (_currentPanel == _clusterPanel) {
       var selectedCell = _clusterPanel.selectedCell
       for (cell in _clusterPanel.selectedCluster.cells) {
-        Canvas.rect(cell.x, cell.y, cell.width, cell.height, (_clusterPanel.cellsListFocused && cell == selectedCell) ? AppColor.domePurple : AppColor.gray)
+        Canvas.rect(x + cell.x, y + cell.y, cell.width, cell.height, (_clusterPanel.cellsListFocused && cell == selectedCell) ? AppColor.domePurple : AppColor.gray)
       }
     }
 
