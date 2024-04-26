@@ -101,9 +101,7 @@ class Animation {
     _frames = element.elements("frame").map {|x| Frame.new(x) }.toList.where{|x| x.duration > 0 }.toList
     _frameId = 0
     _counter = 0
-    if (_frames.count > 0) {
-      _frame = _frames[0]
-    }
+    reset()
   }
 
   update() {
@@ -116,6 +114,16 @@ class Animation {
         _frameId = 0
       }
       _frame = _frames[_frameId]
+    }
+  }
+
+  reset() {
+    _counter = 0
+    _frameId = 0
+    if (_frames.count > 0) {
+      _frame = _frames[0]
+    } else {
+      _frame = null
     }
   }
 }
@@ -182,5 +190,11 @@ class CellAnimationResource {
     var anim = _animations[index]
     var cluster = findCluster(anim.frame.cluster)
     cluster.draw(x, y)
+  }
+
+  reset() {
+    for (anim in _animations) {
+      anim.reset()
+    }
   }
 }

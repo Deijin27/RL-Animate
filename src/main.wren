@@ -38,6 +38,7 @@ class Main {
     Hotkey.register("navigateForward", "return")
     Hotkey.register("navigateBack", "escape")
     Hotkey.register("toggleAllAnimations", "a")
+    Hotkey.register("delete", "delete")
     
     _reloadButton = Button.new(10, 220, "RELOAD")
     reload()

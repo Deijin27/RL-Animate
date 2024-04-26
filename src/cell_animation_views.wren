@@ -35,17 +35,32 @@ class AnimationPanel {
   }
 
   updateAnimFocused() {
-    if (Hotkey["navigateForward"].justPressed) {
+    if (Hotkey["delete"].justPressed && selectedAnim != null) {
+      _animationsList.items.removeAt(_animationsList.selectedIndex)
+      return
+    }
+    
+    if (_animationsList.items.count > 0 && Hotkey["navigateForward"].justPressed) {
       // select frame
       _framesList.isFocused = true
       _animationsList.isFocused = false
     } else {
       _animationsList.update()
-      _framesList.items = _animationsList.selectedItem.frames
+      var sa = selectedAnim
+      if (sa != null) {
+        _framesList.items = sa.frames
+      } else {
+        _framesList.items = []
+      }
     }
   }
 
   updateFrameFocused() {
+    if (Hotkey["delete"].justPressed && selectedFrame != null) {
+      _framesList.items.removeAt(_framesList.selectedIndex)
+      _res.reset()
+      return
+    }
     if (Hotkey["navigateBack"].justPressed) {
       // return to animations list
       _framesList.isFocused = false
@@ -95,7 +110,13 @@ class ClusterPanel {
       _clustersList.isFocused = false
     } else {
       _clustersList.update()
-      _cellsList.items = _clustersList.selectedItem.cells
+      var sc = _clustersList.selectedItem
+      if (sc != null) {
+        _cellsList.items = sc.cells
+      } else {
+        _cellsList.items = []
+      }
+      
     }
   }
 
