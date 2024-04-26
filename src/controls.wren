@@ -137,7 +137,10 @@ class ListView {
   selectedItem { _items.count > 0 ? _items[_selectedIndex] : null }
 
   items { _items }
-  items=(value) { _items = value }
+  items=(value) { 
+    _items = value
+    coerceSelectedIndex()
+  }
 
   requiresScrollBar { _items.count > _visibleItemCapacity }
 
@@ -157,7 +160,7 @@ class ListView {
     } else if (Hotkey["up"].justPressed) {
       _selectedIndex = _selectedIndex - 1
     }
-    _selectedIndex = Math.clamp(_selectedIndex, 0, _items.count - 1)
+    coerceSelectedIndex()
 
     if (requiresScrollBar) {
       if (_selectedIndex >= (_scrollPosition + _visibleItemCapacity)) {
@@ -166,6 +169,10 @@ class ListView {
         _scrollPosition = _selectedIndex
       }
     }
+  }
+
+  coerceSelectedIndex() {
+     _selectedIndex = Math.clamp(_selectedIndex, 0, _items.count - 1)
   }
 
   draw(x, y) {
