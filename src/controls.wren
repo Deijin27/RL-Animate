@@ -128,13 +128,17 @@ class ListView {
     _drawItemFn = drawItemFn
     _visibleItemCapacity = 7
     _scrollPosition = 0
+    _scrollWrap = true
   }
-
+  scrollWrap { _scrollWrap }
+  scrollWrap=(value) { _scrollWrap = value }
   title { _title }
   isFocused { _isFocused }
   isFocused=(value) { _isFocused = value }
   selectedIndex { _selectedIndex }
-  selectedItem { _items.count > 0 ? _items[_selectedIndex] : null }
+  selectedItem {
+    return _items.count > 0 ? _items[_selectedIndex] : null 
+  }
 
   items { _items }
   items=(value) { 
@@ -172,7 +176,17 @@ class ListView {
   }
 
   coerceSelectedIndex() {
-     _selectedIndex = Math.clamp(_selectedIndex, 0, _items.count - 1)
+    if (scrollWrap) {
+      if (_selectedIndex == 0) {
+        // do nothing
+      } else if (_selectedIndex >= 0) {
+        _selectedIndex = _selectedIndex % _items.count
+      } else {
+        _selectedIndex = _items.count - (Math.abs(_selectedIndex) % _items.count)
+      }
+    } else {
+      _selectedIndex = Math.clamp(_selectedIndex, 0, _items.count - 1)
+    }
   }
 
   draw(x, y) {
