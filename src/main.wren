@@ -35,8 +35,8 @@ class Main {
     Hotkey.register("right", "right")
     Hotkey.register("toggleBackground", "b")
     Hotkey.register("switchMode", "tab")
-    Hotkey.register("navigateForward", "return")
-    Hotkey.register("navigateBack", "escape")
+    Hotkey.register("navigateForward", "x")
+    Hotkey.register("navigateBack", "z")
     Hotkey.register("toggleAllAnimations", "a")
     Hotkey.register("delete", "delete")
     

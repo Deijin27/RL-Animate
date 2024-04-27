@@ -132,7 +132,7 @@ class CellAnimationResource {
   clusters { _clusters }
   animations { _animations }
   background { _background }
-
+  format { _format }
   findCluster(name) {
     for (cluster in clusters) {
       if (cluster.name == name) {
@@ -153,7 +153,7 @@ class CellAnimationResource {
 
     // find the cell format and load the cells
     var cellCollElem = root.elementOrAbort("cell_collection")
-    var format = cellCollElem.attributeValue("format", String)
+    _format = cellCollElem.attributeValue("format", String)
     if (!CellFormat.all.contains(format)) {
       Fiber.abort("Unknown cell format '%(format)'")
     }
