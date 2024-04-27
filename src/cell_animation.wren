@@ -81,7 +81,9 @@ class Cluster {
 
 class Frame {
   cluster { _cluster }
+  cluster=(value) { _cluster = value }
   duration { _duration }
+  duration=(value) { _duration = value }
   
   construct new(element) {
     _cluster = element.attributeValue("cluster", String)
@@ -91,6 +93,7 @@ class Frame {
 
 class Animation {
   name { _name }
+  name=(value) { _name = value }
   frames { _frames }
   frame { _frame }
 
@@ -140,6 +143,15 @@ class CellAnimationResource {
       }
     }
     return null
+  }
+  findClusterIndex(name) {
+    for (i in 0...clusters.count) {
+      var cluster = clusters[i]
+      if (cluster.name == name) {
+        return i
+      }
+    }
+    return -1
   }
   
   construct new(file, dir) {

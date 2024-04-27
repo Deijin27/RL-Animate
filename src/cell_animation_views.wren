@@ -59,15 +59,27 @@ class AnimationPanel {
     if (Hotkey["delete"].justPressed && selectedFrame != null) {
       _framesList.items.removeAt(_framesList.selectedIndex)
       _res.reset()
-      return
-    }
-    if (Hotkey["navigateBack"].justPressed) {
+    } else if (Hotkey["right"].justPressed) {
+      changeFrameClusterId(selectedFrame, 1)
+    } else if (Hotkey["left"].justPressed) {
+      changeFrameClusterId(selectedFrame, -1)
+    } else if (Hotkey["navigateBack"].justPressed) {
       // return to animations list
       _framesList.isFocused = false
       _animationsList.isFocused = true
     } else {
       _framesList.update()
     }
+  }
+
+  changeFrameClusterId(frame, change) {
+    var clusterIndex = _res.findClusterIndex(frame.cluster) + change
+    if (clusterIndex >= _res.clusters.count) {
+      clusterIndex = 0
+    } else if (clusterIndex < 0) {
+      clusterIndex = _res.clusters.count - 1
+    }
+    frame.cluster = _res.clusters[clusterIndex].name
   }
 
   draw(x, y) {
