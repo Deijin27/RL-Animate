@@ -42,6 +42,7 @@ class AppFont {
   static load() {
     //Font.load(small, "fonts/pixelmix.ttf", 8)
     Font.load(small, "fonts/gorgeousjr.ttf", 16)
+    //Font.load(small, "fonts/pokemonconquest.ttf", 16)
     Canvas.font = small
   }
 }
@@ -52,6 +53,7 @@ class AppColor {
   //static background { Color.hex("#191919") }
   static domePurple { Color.hex("#8D3BFF") }
   static background { Color.black }
+  static raisedBackground { Color.hex("#110022")}
   static foreground { Color.white }
   static buttonForeground { Color.white }
   static buttonBackground { AppColor.domePurple }
@@ -129,6 +131,7 @@ class ListView {
     _visibleItemCapacity = 7
     _scrollPosition = 0
     _scrollWrap = true
+    _spacing = 10
   }
   scrollWrap { _scrollWrap }
   scrollWrap=(value) { _scrollWrap = value }
@@ -190,8 +193,10 @@ class ListView {
   }
 
   draw(x, y) {
-    Canvas.print(title, x + 6, y, isFocused ? AppColor.domePurple : AppColor.gray)
-    y = y + 10
+    if (title != null) {
+       Canvas.print(title, x + 6, y, isFocused ? AppColor.domePurple : AppColor.gray)
+       y = y + _spacing
+    }
 
     if (_items.count == 0) {
       Canvas.print("no items", x + 6, y, AppColor.gray)
@@ -206,7 +211,7 @@ class ListView {
           drawSelectionIndicator(x, itemY)
         }
         _drawItemFn.call(items[itemIndex], x + 6, itemY)
-        itemY = itemY + 10
+        itemY = itemY + _spacing
       }
     }
     if (requiresScrollBar) {
@@ -221,7 +226,7 @@ class ListView {
   drawScrollBar(x, y) {
     // draw the border of the scroll bar
     x = x + 50
-    var sbHeight = _visibleItemCapacity * 10 - 4
+    var sbHeight = _visibleItemCapacity * _spacing - 4
     var sbWidth = 4
     Canvas.rect(x, y, sbWidth, sbHeight, AppColor.foreground)
     // draw the filled in section indicating current focus
@@ -231,3 +236,37 @@ class ListView {
   }
 }
 
+class Menu {
+  construct new(items) {
+    _list = ListView.new(null, items) {|item, x, y| Canvas.print(item, x, y, AppColor.foreground)}
+    _complete = false
+    _proceed = false
+  }
+
+  selected { _list.selectedItem }
+
+  complete { _complete }
+
+  proceed { _proceed }
+
+  update() {
+    if (Hotkey["navigateForward"].justPressed) {
+      _proceed = true
+      _complete = true
+    } else if (Hotkey["navigateBack"].justPressed) {
+      _proceed = false
+      _complete = true
+    } else {
+      _list.update()
+    }
+  }
+
+  draw(x, y) {
+    var w = 60
+    var h = _list.items.count * 10 + 4
+    Canvas.rectfill(x, y, w, h, AppColor.raisedBackground)
+    Canvas.rect(x, y, w, h, AppColor.gray)
+    _list.draw(x + 6, y + 4)
+    
+  }
+}

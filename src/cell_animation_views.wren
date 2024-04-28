@@ -3,7 +3,7 @@ import "input" for Keyboard, Mouse
 import "io" for FileSystem
 import "cell_animation" for CellAnimationResource, CellFormat
 import "dome" for Process, Window, Log
-import "controls" for AppColor, Button, AppFont, ListView, Hotkey
+import "controls" for AppColor, Button, AppFont, ListView, Hotkey, Menu
 import "math" for Math
 
 class AnimationPanel {
@@ -227,8 +227,8 @@ class CellAnimationState {
   }
 
   draw(dt) {
-    var x = 10
-    var y = 10
+    var x = 00
+    var y = 00
     if (_background != null && _drawBackground) {
       Canvas.draw(_background, x, y)
     }
@@ -253,5 +253,8 @@ class CellAnimationState {
     }
 
     _currentPanel.draw(x, y)
+
+    var menu = Menu.new(["Add", "Rename", "Move", "Delete", "Duplicate"])
+    menu.draw(220, 180)
   }
 }
