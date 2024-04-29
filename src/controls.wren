@@ -132,6 +132,7 @@ class ListView {
     _scrollPosition = 0
     _scrollWrap = true
     _spacing = 10
+    _moving = false
   }
   scrollWrap { _scrollWrap }
   scrollWrap=(value) { _scrollWrap = value }
@@ -142,6 +143,8 @@ class ListView {
   selectedItem {
     return _items.count > 0 ? _items[_selectedIndex] : null 
   }
+  moving { _moving }
+  moving=(value) { _moving = value }
 
   items { _items }
   items=(value) { 
@@ -152,6 +155,7 @@ class ListView {
   requiresScrollBar { _items.count > _visibleItemCapacity }
 
   update() {
+    var oldIndex = _selectedIndex
     var downRepeats = Hotkey["down"].repeats
     var upRepeats = Hotkey["up"].repeats
     if (downRepeats > 20) {
@@ -176,6 +180,14 @@ class ListView {
         _scrollPosition = _selectedIndex
       }
     }
+
+    if (_moving) {
+      move(oldIndex, _selectedIndex)
+    }
+  }
+
+  move(oldIndex, newIndex) {
+    // TODO
   }
 
   coerceSelectedIndex() {

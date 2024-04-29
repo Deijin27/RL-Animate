@@ -89,6 +89,18 @@ class Frame {
     _cluster = element.attributeValue("cluster", String)
     _duration = element.attributeValue("duration", Num)
   }
+
+  construct new() {
+    _cluster = "cluster_0"
+    _duration = 1
+  }
+
+  clone() {
+    var n = new()
+    n.cluster = cluster
+    n.duration = duration
+    return n
+  }
 }
 
 class Animation {
@@ -102,8 +114,12 @@ class Animation {
     Log.debug("Loaded animation %(_name)")
     // frames with zero duration are ignored
     _frames = element.elements("frame").map {|x| Frame.new(x) }.toList.where{|x| x.duration > 0 }.toList
-    _frameId = 0
-    _counter = 0
+    reset()
+  }
+
+  construct new() {
+    _name = "new_anim",
+    _frames = []
     reset()
   }
 

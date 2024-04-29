@@ -1,10 +1,17 @@
 import "graphics" for Canvas, Color, ImageData
 import "input" for Keyboard, Mouse
 import "io" for FileSystem
-import "cell_animation" for CellAnimationResource, CellFormat
+import "cell_animation" for CellAnimationResource, CellFormat, Animation, Frame
 import "dome" for Process, Window, Log
 import "controls" for AppColor, Button, AppFont, ListView, Hotkey, Menu
 import "math" for Math
+
+class AnimationPanelState {
+  list { 0 }
+  menu { 1 }
+  move { 2 }
+  rename { 3 }
+}
 
 class AnimationPanel {
   construct new(cellAnimationResource) {
@@ -19,6 +26,86 @@ class AnimationPanel {
       Canvas.print(item.duration.toString, x + 40, y, AppColor.foreground)
     }
     _framesList.isFocused = false
+    _state = AnimationPanelState.list
+
+    _animStateActions = {
+      "list": Fn.new { 
+        updateAnimFocused() 
+      },
+      "rename" : Fn.new {
+        // TODO
+      },
+      "menu" : Fn.new {
+        if (_menu.complete) {
+          _animMenuActions[_menu.result].call()
+          _menu = null
+          _state = "list"
+        }
+      },
+      "move" : Fn.new {
+        // TODO
+      },
+    }
+
+    _frameStateActions = {
+      "list": Fn.new { 
+        updateFrameFocused() 
+      },
+      "menu": Fn.new {
+        if (_menu.complete) {
+          _frameMenuActions[_menu.result].call()
+          _menu = null
+          _state = "list"
+        }
+      },
+      "move" : Fn.new {
+        // TODO
+      }
+    }
+
+    _animMenuActions = {
+      "Add": Fn.new {
+        var targetPos = _animationsList.items.count > 0 ? _animationsList.selectedIndex + 1 : 0
+        _animationsList.items.insert(Animation.new(), _animationsList.selectedIndex + 1)
+        _state = "rename"
+      },
+      "Rename" : Fn.new {
+        _state = "rename"
+      },
+      "Move" : Fn.new {
+        _state = "move"
+      },
+      "Delete": Fn.new {
+        _animationsList.items.removeAt(_animationsList.selectedIndex)
+        _state = "list"
+      },
+      "Duplicate": Fn.new {
+        var targetPos = _animationsList.items.count > 0 ? _animationsList.selectedIndex + 1 : 0
+        _animationsList.items.insert(Animation.clone(), _animationsList.selectedIndex + 1)
+        _state = "rename"
+      }
+    }
+
+    _frameMenuActions = {
+      "Add": Fn.new {
+        var targetPos = _framesList.items.count > 0 ? _framesList.selectedIndex + 1 : 0
+        _framesList.items.insert(Frame.new(), targetPos)
+        _state = "list"
+      },
+      "Move" : Fn.new {
+        _state = "move"
+      },
+      "Delete": Fn.new {
+        _framesList.items.removeAt(_framesList.selectedIndex)
+        _res.reset()
+        _state = "list"
+      },
+      "Duplicate": Fn.new {
+        var targetPos = _framesList.items.count > 0 ? _framesList.selectedIndex + 1 : 0
+        _framesList.items.insert(selectedFrame.clone(), targetPos)
+        _state = "list"
+      }
+    }
   }
 
   selection { _animationsList.selectedIndex }
@@ -28,19 +115,19 @@ class AnimationPanel {
 
   update() {
     if (_animationsList.isFocused) {
-      updateAnimFocused()
+      _animStateActions[_state].call()
     } else {
-      updateFrameFocused()
+      _frameStateActions[_state].call()
     }
   }
 
   updateAnimFocused() {
-    if (Hotkey["delete"].justPressed && selectedAnim != null) {
-      _animationsList.items.removeAt(_animationsList.selectedIndex)
-      return
-    }
-    
-    if (_animationsList.items.count > 0 && Hotkey["navigateForward"].justPressed) {
+    if (Hotkey["menu"].justPresssed) {
+      _menu = _animationsList.items.count == 0 
+        ? Menu.new(["Add"]) 
+        : Menu.new(["Add", "Move", "Delete", "Duplicate"])
+      _state = "menu"
+    } else if (_animationsList.items.count > 0 && Hotkey["navigateForward"].justPressed) {
       // select frame
       _framesList.isFocused = true
       _animationsList.isFocused = false
@@ -56,9 +143,11 @@ class AnimationPanel {
   }
 
   updateFrameFocused() {
-    if (Hotkey["delete"].justPressed && selectedFrame != null) {
-      _framesList.items.removeAt(_framesList.selectedIndex)
-      _res.reset()
+    if (Hotkey["menu"].justPressed) {
+      _menu = _framesList.items.count == 0 
+        ? Menu.new(["Add"]) 
+        : Menu.new(["Add", "Rename", "Move", "Delete", "Duplicate"])
+      _state = "menu"
     } else if (Hotkey["right"].justPressed) {
       changeFrameClusterId(selectedFrame, 1)
     } else if (Hotkey["left"].justPressed) {
@@ -85,6 +174,9 @@ class AnimationPanel {
   draw(x, y) {
     _animationsList.draw(x + 15, y + 130)
     _framesList.draw(x + 80, y + 130)
+    if (_menu != null) {
+      _menu.draw(220, 180)
+    }
   }
 }
 
@@ -253,8 +345,5 @@ class CellAnimationState {
     }
 
     _currentPanel.draw(x, y)
-
-    var menu = Menu.new(["Add", "Rename", "Move", "Delete", "Duplicate"])
-    menu.draw(220, 180)
   }
 }
