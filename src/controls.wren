@@ -48,9 +48,6 @@ class AppFont {
 }
 
 class AppColor {
-  //static background { Color.hex("#1E1E2E") }
-  //static foreground { Color.hex("#cdd6f4")}
-  //static background { Color.hex("#191919") }
   static domePurple { Color.hex("#8D3BFF") }
   static background { Color.black }
   static raisedBackground { Color.hex("#110022")}

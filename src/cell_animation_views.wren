@@ -37,6 +37,7 @@ class AnimationPanel {
       },
       "rename" : Fn.new {
         // TODO
+        _state = "list"
       },
       "menu" : Fn.new {
         _menu.update()
@@ -50,6 +51,8 @@ class AnimationPanel {
         }
       },
       "move" : Fn.new {
+        // TODO: have some text per-state, maybe which replaces the left top bar text
+        // and this says "MOVING ITEM..." etc.
         if (Hotkey["navigateBack"].justPressed) {
           _state = "list"
           _animationsList.moving = false
@@ -87,7 +90,7 @@ class AnimationPanel {
     _animMenuActions = {
       "Add": Fn.new {
         var targetPos = _animationsList.items.count > 0 ? _animationsList.selectedIndex + 1 : 0
-        _animationsList.items.insert(Animation.new(), _animationsList.selectedIndex + 1)
+        _animationsList.items.insert(targetPos, Animation.new())
         _state = "rename"
       },
       "Rename" : Fn.new {
@@ -103,15 +106,16 @@ class AnimationPanel {
       },
       "Duplicate": Fn.new {
         var targetPos = _animationsList.items.count > 0 ? _animationsList.selectedIndex + 1 : 0
-        _animationsList.items.insert(Animation.clone(), _animationsList.selectedIndex + 1)
+        _animationsList.items.insert(targetPos, selectedAnim.clone())
         _state = "rename"
+        _menu = null
       }
     }
 
     _frameMenuActions = {
       "Add": Fn.new {
         var targetPos = _framesList.items.count > 0 ? _framesList.selectedIndex + 1 : 0
-        _framesList.items.insert(Frame.new(), targetPos)
+        _framesList.items.insert(targetPos, Frame.new())
         _state = "list"
       },
       "Move" : Fn.new {
@@ -125,7 +129,7 @@ class AnimationPanel {
       },
       "Duplicate": Fn.new {
         var targetPos = _framesList.items.count > 0 ? _framesList.selectedIndex + 1 : 0
-        _framesList.items.insert(selectedFrame.clone(), targetPos)
+        _framesList.items.insert(targetPos, selectedFrame.clone())
         _state = "list"
       }
     }
@@ -146,7 +150,7 @@ class AnimationPanel {
 
   updateAnimFocused() {
     if (Hotkey["menu"].justPressed) {
-      _menu = _animationsList.items.count == 0 ? Menu.new(["Add"]) : Menu.new(["Add", "Move", "Delete", "Duplicate"])
+      _menu = _animationsList.items.count == 0 ? Menu.new(["Add"]) : Menu.new(["Add", "Rename", "Move", "Delete", "Duplicate"])
       _state = "menu"
     } else if (_animationsList.items.count > 0 && Hotkey["navigateForward"].justPressed) {
       // select frame
@@ -165,12 +169,13 @@ class AnimationPanel {
 
   updateFrameFocused() {
     if (Hotkey["menu"].justPressed) {
-      _menu = _framesList.items.count == 0 ? Menu.new(["Add"]) : Menu.new(["Add", "Rename", "Move", "Delete", "Duplicate"])
+      _menu = _framesList.items.count == 0 ? Menu.new(["Add"]) : Menu.new(["Add", "Move", "Delete", "Duplicate"])
       _state = "menu"
-    } else if (Hotkey["right"].justPressed) {
-      changeFrameClusterId(selectedFrame, 1)
-    } else if (Hotkey["left"].justPressed) {
-      changeFrameClusterId(selectedFrame, -1)
+      // TODO: enter an edit mode when clicking A which allows you to edit the frame's values
+    // } else if (Hotkey["right"].justPressed) {
+    //   changeFrameClusterId(selectedFrame, 1)
+    // } else if (Hotkey["left"].justPressed) {
+    //   changeFrameClusterId(selectedFrame, -1)
     } else if (Hotkey["navigateBack"].justPressed) {
       // return to animations list
       _framesList.isFocused = false

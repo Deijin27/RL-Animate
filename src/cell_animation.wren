@@ -96,7 +96,7 @@ class Frame {
   }
 
   clone() {
-    var n = new()
+    var n = Frame.new()
     n.cluster = cluster
     n.duration = duration
     return n
@@ -144,6 +144,16 @@ class Animation {
     } else {
       _frame = null
     }
+  }
+
+  clone() {
+    var n = Animation.new()
+    n.name = name
+    for (frame in frames) {
+      n.frames.add(frame.clone())
+    }
+    n.reset()
+    return n
   }
 }
 
