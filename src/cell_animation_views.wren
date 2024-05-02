@@ -26,7 +26,7 @@ class AnimationPanel {
       Canvas.print(item.duration.toString, x + 40, y, AppColor.foreground)
     }
     _framesList.isFocused = false
-    _state = AnimationPanelState.list
+    _state = "list"
 
     _animStateActions = {
       "list": Fn.new { 
@@ -36,14 +36,23 @@ class AnimationPanel {
         // TODO
       },
       "menu" : Fn.new {
+        _menu.update()
         if (_menu.complete) {
-          _animMenuActions[_menu.result].call()
+          if (_menu.proceed) {
+             _animMenuActions[_menu.selected].call()
+          } else {
+            _state = "list"
+          }
           _menu = null
-          _state = "list"
         }
       },
       "move" : Fn.new {
-        // TODO
+        if (Hotkey["navigateBack"].justPressed) {
+          _state = "list"
+          _animationsList.moving = false
+        } else {
+          _animationsList.update()
+        }
       },
     }
 
@@ -52,14 +61,23 @@ class AnimationPanel {
         updateFrameFocused() 
       },
       "menu": Fn.new {
+       _menu.update()
         if (_menu.complete) {
-          _frameMenuActions[_menu.result].call()
+          if (_menu.proceed) {
+             _frameMenuActions[_menu.selected].call()
+          } else {
+            _state = "list"
+          }
           _menu = null
-          _state = "list"
         }
       },
       "move" : Fn.new {
-        // TODO
+        if (Hotkey["navigateBack"].justPressed) {
+          _state = "list"
+          _animationsList.moving = false
+        } else {
+          _animationsList.update()
+        }
       }
     }
 
@@ -74,6 +92,7 @@ class AnimationPanel {
       },
       "Move" : Fn.new {
         _state = "move"
+        _animationsList.moving = true
       },
       "Delete": Fn.new {
         _animationsList.items.removeAt(_animationsList.selectedIndex)
@@ -94,6 +113,7 @@ class AnimationPanel {
       },
       "Move" : Fn.new {
         _state = "move"
+        _framesList.moving = true
       },
       "Delete": Fn.new {
         _framesList.items.removeAt(_framesList.selectedIndex)
@@ -122,10 +142,8 @@ class AnimationPanel {
   }
 
   updateAnimFocused() {
-    if (Hotkey["menu"].justPresssed) {
-      _menu = _animationsList.items.count == 0 
-        ? Menu.new(["Add"]) 
-        : Menu.new(["Add", "Move", "Delete", "Duplicate"])
+    if (Hotkey["menu"].justPressed) {
+      _menu = _animationsList.items.count == 0 ? Menu.new(["Add"]) : Menu.new(["Add", "Move", "Delete", "Duplicate"])
       _state = "menu"
     } else if (_animationsList.items.count > 0 && Hotkey["navigateForward"].justPressed) {
       // select frame
@@ -144,9 +162,7 @@ class AnimationPanel {
 
   updateFrameFocused() {
     if (Hotkey["menu"].justPressed) {
-      _menu = _framesList.items.count == 0 
-        ? Menu.new(["Add"]) 
-        : Menu.new(["Add", "Rename", "Move", "Delete", "Duplicate"])
+      _menu = _framesList.items.count == 0 ? Menu.new(["Add"]) : Menu.new(["Add", "Rename", "Move", "Delete", "Duplicate"])
       _state = "menu"
     } else if (Hotkey["right"].justPressed) {
       changeFrameClusterId(selectedFrame, 1)
@@ -298,6 +314,7 @@ class CellAnimationState {
     _clusterPanel = ClusterPanel.new(_cellAnimationResource)
     _currentPanel = _animationPanel
     _all = true
+    _menu = Menu.new(["Save", "Toggle Background"])
   }
 
   update() {

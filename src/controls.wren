@@ -187,7 +187,15 @@ class ListView {
   }
 
   move(oldIndex, newIndex) {
-    // TODO
+    if (oldIndex == newIndex) {
+      return
+    }
+    var item = _items[oldIndex]
+    // if (oldIndex < newIndex) {
+    //   newIndex = newIndex - 1
+    // }
+    _items.removeAt(oldIndex)
+    _items.insert(newIndex, item)
   }
 
   coerceSelectedIndex() {
@@ -232,7 +240,13 @@ class ListView {
   }
 
   drawSelectionIndicator(x, y) {
-    Canvas.circle(x, y + 2, 2, isFocused ? AppColor.domePurple : AppColor.gray)
+    var color = null
+    if (moving) {
+      color = Color.hex("#E3C355")
+    } else {
+      color = isFocused ? AppColor.domePurple : AppColor.gray
+    }
+    Canvas.circle(x, y + 2, 2, color)
   }
 
   drawScrollBar(x, y) {

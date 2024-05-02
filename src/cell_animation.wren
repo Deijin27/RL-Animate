@@ -118,7 +118,7 @@ class Animation {
   }
 
   construct new() {
-    _name = "new_anim",
+    _name = "new_anim"
     _frames = []
     reset()
   }
