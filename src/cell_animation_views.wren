@@ -1,4 +1,4 @@
-import "graphics" for Canvas, Color, ImageData
+import "graphics" for Canvas, Color, ImageData, Font
 import "input" for Keyboard, Mouse
 import "io" for FileSystem
 import "cell_animation" for CellAnimationResource, CellFormat, Animation, Frame
@@ -14,6 +14,9 @@ class AnimationPanelState {
 }
 
 class AnimationPanel {
+
+  name { "ANIMATIONS" }
+
   construct new(cellAnimationResource) {
     _res = cellAnimationResource
     _frameListFocused = false
@@ -188,8 +191,8 @@ class AnimationPanel {
   }
 
   draw(x, y) {
-    _animationsList.draw(x + 15, y + 130)
-    _framesList.draw(x + 80, y + 130)
+    _animationsList.draw(x, y)
+    _framesList.draw(x + 65, y)
     if (_menu != null) {
       _menu.draw(220, 180)
     }
@@ -232,6 +235,8 @@ class ClusterPanel {
     _cellsList.isFocused = false
     _clusterInfo.isFocused = false
   }
+
+  name { "CLUSTERS" }
 
   selection { _clustersList.selectedIndex }
   selectedCluster { _clustersList.selectedItem }
@@ -287,12 +292,10 @@ class ClusterPanel {
   }
 
   draw(x, y) {
-    y = y + 130
-
-    _clustersList.draw(x + 15, y)
+    _clustersList.draw(x, y)
 
     var cellsListY = y
-    var clusterInfoX = x + 80
+    var clusterInfoX = x + 65
     if (_res.format == CellFormat.oneImagePerCluster) {
       cellsListY = cellsListY + 20
       _clusterInfo.draw(clusterInfoX, y)
@@ -314,7 +317,6 @@ class CellAnimationState {
     _clusterPanel = ClusterPanel.new(_cellAnimationResource)
     _currentPanel = _animationPanel
     _all = true
-    _menu = Menu.new(["Save", "Toggle Background"])
   }
 
   update() {
@@ -325,7 +327,7 @@ class CellAnimationState {
     if (Hotkey["toggleBackground"].justPressed) {
       _drawBackground = !_drawBackground
     }
-    if (Hotkey["switchMode"].justPressed) {
+    if (Hotkey["left"].justPressed || Hotkey["right"].justPressed) {
       if (_currentPanel == _animationPanel) {
         _currentPanel = _clusterPanel
       } else {
@@ -336,8 +338,28 @@ class CellAnimationState {
   }
 
   draw(dt) {
-    var x = 00
-    var y = 00
+    drawImg(2, 2)
+    drawTopBar(0, 124)
+    _currentPanel.draw(10, 140)
+  }
+
+  drawTopBar(x, y) {
+    // background
+    Canvas.rectfill(0, y, 400, 9, AppColor.raisedBackground)
+    Canvas.line(0, y, 400, y, AppColor.gray)
+    Canvas.line(0, y + 8, 400, y + 8, AppColor.gray)
+    
+    // left text
+    Canvas.print("EDIT ANIMATION", 5, y + 2, AppColor.foreground)
+
+    // right text
+    var text = "<< " + _currentPanel.name + " >>"
+    var textWidth = Font[Canvas.font].getArea(text).x
+
+    Canvas.print(text, 200 - textWidth / 2, y + 2, AppColor.domePurple)
+  }
+
+  drawImg(x, y) {
     if (_background != null && _drawBackground) {
       Canvas.draw(_background, x, y)
     }
@@ -360,7 +382,5 @@ class CellAnimationState {
         Canvas.rect(x + cell.x, y + cell.y, cell.width, cell.height, (_clusterPanel.cellsListFocused && cell == selectedCell) ? AppColor.domePurple : AppColor.gray)
       }
     }
-
-    _currentPanel.draw(x, y)
   }
 }
