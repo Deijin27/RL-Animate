@@ -3,7 +3,7 @@ import "input" for Keyboard, Mouse
 import "io" for FileSystem
 import "cell_animation" for CellAnimationResource, CellFormat, Animation, Frame
 import "dome" for Process, Window, Log
-import "controls" for AppColor, Button, AppFont, ListView, Hotkey, Menu
+import "controls" for AppColor, Button, AppFont, ListView, Hotkey, Menu, TextInputDialog
 import "math" for Math
 
 class AnimationPanelState {
@@ -36,8 +36,14 @@ class AnimationPanel {
         updateAnimFocused() 
       },
       "rename" : Fn.new {
-        // TODO
-        _state = "list"
+        _textDialog.update()
+        if (_textDialog.complete) {
+          if (_textDialog.proceed) {
+            selectedAnim.name = _textDialog.text
+          }
+          _state = "list"
+          _textDialog = null
+        }
       },
       "menu" : Fn.new {
         _menu.update()
@@ -91,10 +97,11 @@ class AnimationPanel {
       "Add": Fn.new {
         var targetPos = _animationsList.items.count > 0 ? _animationsList.selectedIndex + 1 : 0
         _animationsList.items.insert(targetPos, Animation.new())
-        _state = "rename"
+        _animationsList.selectedIndex = targetPos
+        beginRename()
       },
       "Rename" : Fn.new {
-        _state = "rename"
+        beginRename()
       },
       "Move" : Fn.new {
         _state = "move"
@@ -107,8 +114,9 @@ class AnimationPanel {
       "Duplicate": Fn.new {
         var targetPos = _animationsList.items.count > 0 ? _animationsList.selectedIndex + 1 : 0
         _animationsList.items.insert(targetPos, selectedAnim.clone())
-        _state = "rename"
+        _animationsList.selectedIndex = targetPos
         _menu = null
+        beginRename()
       }
     }
 
@@ -132,6 +140,22 @@ class AnimationPanel {
         _framesList.items.insert(targetPos, selectedFrame.clone())
         _state = "list"
       }
+    }
+  }
+
+  beginRename() {
+    _state = "rename"
+    _textDialog = TextInputDialog.new(selectedAnim.name) {|text|
+      // validate
+      if (text.count == 0) {
+        return false
+      }
+      for (i in 0..._animationsList.items.count) {
+        if (i != _animationsList.selectedIndex && _animationsList.items[i].name == text) {
+          return false
+        }
+      }
+      return true
     }
   }
 
@@ -200,6 +224,9 @@ class AnimationPanel {
     _framesList.draw(x + 65, y)
     if (_menu != null) {
       _menu.draw(220, 180)
+    }
+    if (_textDialog != null) {
+      _textDialog.draw(200, 180)
     }
   }
 }
@@ -343,9 +370,35 @@ class CellAnimationState {
   }
 
   draw(dt) {
+    drawBackground()
     drawImg(2, 2)
     drawTopBar(0, 124)
     _currentPanel.draw(10, 140)
+  }
+
+  drawBackground() {
+    Canvas.rectfill(0, 124, 600, 200, Color.hex("#171717"))
+    drawCheckerboard(0, 0, 600, 124, 6, Color.black, Color.hex("#101010"))
+  }
+
+  drawCheckerboard(x, y, w, h, squareSize, color1, color2) {
+   var floorX = (w / squareSize).floor + 1
+   var floorY = (h / squareSize).floor + 1
+   Canvas.rectfill(x, y, w, h, color1)
+   var even = floorY % 2 == 0
+   var altern = false
+   for (i in 0...floorX) {
+    var xPos = x + i * squareSize
+    for (j in 0...floorY) {
+      if (altern) {
+        Canvas.rectfill(xPos, y + j * squareSize, squareSize, squareSize, color2)
+      }
+      altern = !altern
+    }
+    if (even) {
+      altern = !altern
+    }
+   }
   }
 
   drawTopBar(x, y) {

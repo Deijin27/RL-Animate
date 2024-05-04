@@ -50,7 +50,7 @@ class AppFont {
 class AppColor {
   static domePurple { Color.hex("#8D3BFF") }
   static background { Color.black }
-  static raisedBackground { Color.hex("#110022")}
+  static raisedBackground { Color.hex("#000000")}
   static foreground { Color.white }
   static buttonForeground { Color.white }
   static buttonBackground { AppColor.domePurple }
@@ -291,5 +291,69 @@ class Menu {
     Canvas.rect(x, y, w, h, AppColor.gray)
     _list.draw(x + 6, y + 4)
     
+  }
+}
+
+class TextInputDialog {
+  construct new(initText, validateText) {
+    _text = initText
+    _validateText = validateText
+    _complete = false
+    _proceed = false
+    Keyboard.handleText = true
+    _state = "tbox"
+    validate()
+  }
+
+  close(proceed) {
+    Keyboard.handleText = false
+    _proceed = proceed
+    _complete = true
+  }
+
+  validate() {
+    _valid = _validateText.call(_text)
+  }
+
+  text { _text }
+  complete { _complete }
+  proceed { _proceed }
+  valid { _valid }
+
+  update() {
+    if (Keyboard["escape"].justPressed) {
+      close(false)
+    } else if (valid && Keyboard["return"].justPressed) {
+      close(true)
+    } else if (Keyboard["backspace"].justPressed) {
+      if (_text.count > 0) {
+        _text = _text[0...-1]
+        validate()
+      }
+    } else {
+      var newText = Keyboard.text
+      _text = _text + newText
+      validate()
+    }
+  }
+
+  draw(x, y) {
+    var w = 70
+    var h = 30
+    Canvas.rectfill(x, y, w, h, AppColor.raisedBackground)
+    Canvas.rect(x, y, w, h, AppColor.gray)
+
+    // draw text box
+    var tboxX = x + 2
+    var tboxY = y + 2
+    var tboxW = w - 4
+    var tboxH = 10
+    Canvas.rectfill(tboxX, tboxY, tboxW, tboxH, AppColor.background)
+    Canvas.rect(tboxX, tboxY, tboxW, tboxH, AppColor.domePurple)
+    Canvas.print(_text, tboxX + 2, tboxY + 2, AppColor.foreground)
+
+    // draw hints
+    Canvas.print("<< ESCAPE", x + 2, y + 16, Color.red)
+    Canvas.print("ENTER >>", x + 40, y + 16, valid ? Color.green : AppColor.gray)
   }
 }
