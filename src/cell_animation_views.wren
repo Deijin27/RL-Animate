@@ -349,6 +349,7 @@ class CellAnimationState {
     _clusterPanel = ClusterPanel.new(_cellAnimationResource)
     _currentPanel = _animationPanel
     _all = true
+    _updateCounter = 0
   }
 
   update() {
@@ -367,6 +368,7 @@ class CellAnimationState {
       }
     }
     _currentPanel.update()
+    _updateCounter = _updateCounter + 1
   }
 
   draw(dt) {
@@ -374,11 +376,38 @@ class CellAnimationState {
     drawImg(2, 2)
     drawTopBar(0, 124)
     _currentPanel.draw(10, 140)
+    drawBottomBar()
+  }
+
+  drawBottomBar() {
+    var h = Canvas.height
+    var top = h - 14
+    var w = Canvas.width
+    Canvas.rectfill(0, top, w, 14, Color.hex("#202020"))
+    Canvas.line(0, top, w, top, Color.black)
   }
 
   drawBackground() {
-    Canvas.rectfill(0, 124, 600, 200, Color.hex("#171717"))
+    //Canvas.rectfill(0, 124, 600, 200, Color.hex("#817bb7"))
+    var gridPos = 0 - (_updateCounter / 7) % 7 
+    drawGrid(gridPos, 124, 600, 200, 7, Color.hex("#585289"), Color.hex("#3c3768"))
     drawCheckerboard(0, 0, 600, 124, 6, Color.black, Color.hex("#101010"))
+    //Canvas.line(6, 0, 6, 124, Color.red)
+    //Canvas.line(0, 6, 600, 6, Color.blue)
+  }
+
+  drawGrid(x, y, w, h, squareSize, bgColor, lineColor) {
+    Canvas.rectfill(x, y, w, h, bgColor)
+    var lx = 0
+    while (lx < w) {
+      lx = lx + squareSize
+      Canvas.line(x + lx, y, x + lx, y + h, lineColor)
+    }
+    var ly = 0
+    while (ly < h) {
+      Canvas.line(x, y + ly, x + w, y + ly, lineColor)
+      ly = ly + squareSize
+    }
   }
 
   drawCheckerboard(x, y, w, h, squareSize, color1, color2) {
@@ -403,18 +432,20 @@ class CellAnimationState {
 
   drawTopBar(x, y) {
     // background
-    Canvas.rectfill(0, y, 400, 9, AppColor.raisedBackground)
-    Canvas.line(0, y, 400, y, AppColor.gray)
-    Canvas.line(0, y + 8, 400, y + 8, AppColor.gray)
+    Canvas.rectfill(0, y, 400, 11, AppColor.raisedBackground)
+    Canvas.line(0, y, 400, y, AppColor.domePurple)
+    Canvas.line(0, y - 1, 400, y - 1, Color.black)
+    Canvas.line(0, y + 10, 400, y + 10, AppColor.domePurple)
+    Canvas.line(0, y + 11, 400, y + 11, Color.black)
     
     // left text
-    Canvas.print("EDIT ANIMATION", 5, y + 2, AppColor.foreground)
+    Canvas.print("EDIT ANIMATION", 5, y + 3, AppColor.foreground)
 
     // right text
     var text = "<< " + _currentPanel.name + " >>"
     var textWidth = Font[Canvas.font].getArea(text).x
 
-    Canvas.print(text, 200 - textWidth / 2, y + 2, AppColor.domePurple)
+    Canvas.print(text, 200 - textWidth / 2, y + 3, AppColor.gamer)
   }
 
   drawImg(x, y) {

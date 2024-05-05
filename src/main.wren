@@ -82,6 +82,7 @@ class Main {
   }
 
   update() {
+    AppColor.update()
     _reloadButton.update()
     if (_reloadButton.justPressed) {
       reload()

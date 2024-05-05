@@ -48,14 +48,42 @@ class AppFont {
 }
 
 class AppColor {
-  static domePurple { Color.hex("#8D3BFF") }
+  static gamer { __gamer }
+  static domePurple { __domePurple }
   static background { Color.black }
-  static raisedBackground { Color.hex("#000000")}
+  static raisedBackground { __raisedBackground }
   static foreground { Color.white }
   static buttonForeground { Color.white }
   static buttonBackground { AppColor.domePurple }
   static gray { Color.darkgray }
+  static init_() {
+    __domePurple = Color.hex("#8D3BFF")
+    __raisedBackground = Color.hex("#000000")
+
+    __gamerPoints = [
+      Color.hex("#8D3BFF"),
+      Color.hex("#A05CFF"),
+      Color.hex("#B179FF"),
+      Color.hex("#C8A0FF"),
+      Color.hex("#DABFFF")
+    ]
+
+    __updateCounter = 0
+
+    AppColor.update()
+  }
+  static update() {
+    __updateCounter = __updateCounter + 1
+
+    var gamerIndex = (__updateCounter / 6).floor % (__gamerPoints.count * 2 - 1)
+    if (gamerIndex < __gamerPoints.count) {
+      __gamer = __gamerPoints[gamerIndex]
+    } else {
+      __gamer = __gamerPoints[__gamerPoints.count * 2 - gamerIndex - 1]
+    }
+  }
 }
+AppColor.init_()
 
 class Control {
   construct new(x, y, width, height) {
@@ -128,7 +156,7 @@ class ListView {
     _visibleItemCapacity = 7
     _scrollPosition = 0
     _scrollWrap = true
-    _spacing = 10
+    _spacing = 12
     _moving = false
   }
   scrollWrap { _scrollWrap }
@@ -211,7 +239,8 @@ class ListView {
 
   draw(x, y) {
     if (title != null) {
-       Canvas.print(title, x + 6, y, isFocused ? AppColor.domePurple : AppColor.gray)
+       drawItemBackground(x + 4, y - 2)
+       Canvas.print(title, x + 6, y, isFocused ? AppColor.gamer : AppColor.gray)
        y = y + _spacing
     }
 
@@ -227,6 +256,7 @@ class ListView {
         if (itemIndex == selectedIndex) {
           drawSelectionIndicator(x, itemY)
         }
+        drawItemBackground(x + 4, itemY - 2)
         _drawItemFn.call(items[itemIndex], x + 6, itemY)
         itemY = itemY + _spacing
       }
@@ -236,12 +266,18 @@ class ListView {
     }
   }
 
+
+  drawItemBackground(x, y) {
+    var color = isFocused ? AppColor.domePurple : AppColor.gray
+    Canvas.rectfill(x, y, 50, 9, Color.black)
+  }
+
   drawSelectionIndicator(x, y) {
     var color = null
     if (moving) {
       color = Color.hex("#E3C355")
     } else {
-      color = isFocused ? AppColor.domePurple : AppColor.gray
+      color = isFocused ? AppColor.gamer : AppColor.gray
     }
     Canvas.circle(x, y + 2, 2, color)
   }
@@ -349,7 +385,7 @@ class TextInputDialog {
     var tboxW = w - 4
     var tboxH = 10
     Canvas.rectfill(tboxX, tboxY, tboxW, tboxH, AppColor.background)
-    Canvas.rect(tboxX, tboxY, tboxW, tboxH, AppColor.domePurple)
+    Canvas.rect(tboxX, tboxY, tboxW, tboxH, AppColor.gamer)
     Canvas.print(_text, tboxX + 2, tboxY + 2, AppColor.foreground)
 
     // draw hints
