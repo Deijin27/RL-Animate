@@ -153,7 +153,7 @@ class ListView {
     _selectedIndex = 0
     _isFocused = true
     _drawItemFn = drawItemFn
-    _visibleItemCapacity = 7
+    _visibleItemCapacity = 6
     _scrollPosition = 0
     _scrollWrap = true
     _spacing = 12
@@ -165,6 +165,11 @@ class ListView {
   isFocused { _isFocused }
   isFocused=(value) { _isFocused = value }
   selectedIndex { _selectedIndex }
+  selectedIndex=(value) {
+    _selectedIndex = value
+    coerceSelectedIndex()
+  }
+
   selectedItem {
     return _items.count > 0 ? _items[_selectedIndex] : null 
   }
@@ -198,14 +203,6 @@ class ListView {
     }
     coerceSelectedIndex()
 
-    if (requiresScrollBar) {
-      if (_selectedIndex >= (_scrollPosition + _visibleItemCapacity)) {
-        _scrollPosition = _selectedIndex - _visibleItemCapacity + 1
-      } else if (_selectedIndex <= _scrollPosition) {
-        _scrollPosition = _selectedIndex
-      }
-    }
-
     if (_moving) {
       move(oldIndex, _selectedIndex)
     }
@@ -234,6 +231,15 @@ class ListView {
       }
     } else {
       _selectedIndex = Math.clamp(_selectedIndex, 0, _items.count - 1)
+    }
+
+    // bring selected into view
+    if (requiresScrollBar) {
+      if (_selectedIndex >= (_scrollPosition + _visibleItemCapacity)) {
+        _scrollPosition = _selectedIndex - _visibleItemCapacity + 1
+      } else if (_selectedIndex <= _scrollPosition) {
+        _scrollPosition = _selectedIndex
+      }
     }
   }
 
@@ -296,9 +302,11 @@ class ListView {
 
   drawScrollBar(x, y) {
     // draw the border of the scroll bar
-    x = x + 50
-    var sbHeight = _visibleItemCapacity * _spacing - 4
+    x = x + 57
+    y = y - 2
+    var sbHeight = _visibleItemCapacity * _spacing - 3
     var sbWidth = 4
+    Canvas.rectfill(x, y, sbWidth, sbHeight, AppColor.background)
     Canvas.rect(x, y, sbWidth, sbHeight, AppColor.foreground)
     // draw the filled in section indicating current focus
     var fillHeight = _visibleItemCapacity / _items.count * sbHeight
