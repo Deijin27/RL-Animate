@@ -223,7 +223,7 @@ class AnimationPanel {
     _animationsList.draw(x, y)
     _framesList.draw(x + 65, y)
     if (_menu != null) {
-      _menu.draw(220, 180)
+      _menu.draw(220, 160)
     }
     if (_textDialog != null) {
       _textDialog.draw(200, 180)

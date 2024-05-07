@@ -239,7 +239,7 @@ class ListView {
 
   draw(x, y) {
     if (title != null) {
-       drawItemBackground(x + 4, y - 2)
+       drawItemBackground(x + 4, y - 2, AppColor.background, AppColor.background)
        Canvas.print(title, x + 6, y, isFocused ? AppColor.gamer : AppColor.gray)
        y = y + _spacing
     }
@@ -253,10 +253,14 @@ class ListView {
         if (itemIndex >= _items.count) {
           break
         }
-        if (itemIndex == selectedIndex) {
-          drawSelectionIndicator(x, itemY)
+        var isSelectedItem = itemIndex == selectedIndex
+        if (isSelectedItem) {
+          //drawSelectionIndicator(x, itemY)
         }
-        drawItemBackground(x + 4, itemY - 2)
+        if (isSelectedItem && moving) {
+          drawMoveIndicator(x + 4, itemY - 2)
+        }
+        drawItemBackground(x + 4, itemY - 2, isFocused && isSelectedItem)
         _drawItemFn.call(items[itemIndex], x + 6, itemY)
         itemY = itemY + _spacing
       }
@@ -266,10 +270,13 @@ class ListView {
     }
   }
 
+  drawItemBackground(x, y, bgColor, borderColor) {
+    Canvas.rectfill(x, y, 50, 9, bgColor)
+    Canvas.rect(x, y, 50, 9, borderColor)
+  }
 
-  drawItemBackground(x, y) {
-    var color = isFocused ? AppColor.domePurple : AppColor.gray
-    Canvas.rectfill(x, y, 50, 9, Color.black)
+  drawItemBackground(x, y, selected) {
+    drawItemBackground(x, y, Color.black, selected ? AppColor.gamer : AppColor.background)
   }
 
   drawSelectionIndicator(x, y) {
@@ -280,6 +287,11 @@ class ListView {
       color = isFocused ? AppColor.gamer : AppColor.gray
     }
     Canvas.circle(x, y + 2, 2, color)
+  }
+
+  drawMoveIndicator(x, y) {
+    Canvas.trianglefill(x + 22, y, x + 28, y, x + 25, y - 3, AppColor.gamer)
+    Canvas.trianglefill(x + 22, y + 8, x + 28, y + 8, x + 25, y + 11, AppColor.gamer)
   }
 
   drawScrollBar(x, y) {
@@ -297,12 +309,13 @@ class ListView {
 
 class Menu {
   construct new(items) {
-    _list = ListView.new(null, items) {|item, x, y| Canvas.print(item, x, y, AppColor.foreground)}
+    _items = items
     _complete = false
     _proceed = false
+    _selectedIndex = 0
   }
 
-  selected { _list.selectedItem }
+  selected { _items[_selectedIndex] }
 
   complete { _complete }
 
@@ -315,17 +328,34 @@ class Menu {
     } else if (Hotkey["navigateBack"].justPressed) {
       _proceed = false
       _complete = true
-    } else {
-      _list.update()
+    } else if (Hotkey["up"].justPressed) {
+      var newIndex = _selectedIndex - 1
+      if (newIndex >= 0) {
+        _selectedIndex = newIndex
+      }
+    } else if (Hotkey["down"].justPressed) {
+      var newIndex = _selectedIndex  + 1
+      if (newIndex < _items.count) {
+        _selectedIndex = newIndex
+      }
     }
   }
 
   draw(x, y) {
     var w = 60
-    var h = _list.items.count * 10 + 4
+    var h = _items.count * 10 + 4
     Canvas.rectfill(x, y, w, h, AppColor.raisedBackground)
     Canvas.rect(x, y, w, h, AppColor.gray)
-    _list.draw(x + 6, y + 4)
+
+    for (i in 0..._items.count) {
+      var itemY = y + i * 10 + 4
+      Canvas.print(_items[i], x + 11, itemY, AppColor.foreground)
+      if (i == _selectedIndex) {
+        var triX = x + 4
+        var triY = itemY - 1
+        Canvas.trianglefill(triX, triY, triX, triY + 6, triX + 3, triY + 3, AppColor.gamer)
+      }
+    }
     
   }
 }
