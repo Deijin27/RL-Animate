@@ -8,7 +8,7 @@ import "io" for FileSystem
 import "pattern_animation" for LibraryPatternAnimationCollection
 import "dome" for Process, Window, Log
 import "controls" for AppColor, Button, AppFont, Hotkey
-import "cell_animation_views" for CellAnimationState
+import "cell_animation_views/cell_animation_state" for CellAnimationState
 import "pattern_animation_views" for PatternAnimationState
 
 Log.level = "DEBUG"

@@ -146,6 +146,7 @@ class ToggleButton {
 }
 
 
+
 class ListView {
   construct new(title, items, drawItemFn) {
     _title = title
@@ -158,7 +159,10 @@ class ListView {
     _scrollWrap = true
     _spacing = 12
     _moving = false
+    _width = 50
   }
+  width { _width }
+  width=(v) { _width = v }
   scrollWrap { _scrollWrap }
   scrollWrap=(value) { _scrollWrap = value }
   title { _title }
@@ -171,7 +175,7 @@ class ListView {
   }
 
   selectedItem {
-    return _items.count > 0 ? _items[_selectedIndex] : null 
+    return _items.count > 0 ? _items[selectedIndex] : null 
   }
   moving { _moving }
   moving=(value) { _moving = value }
@@ -185,26 +189,28 @@ class ListView {
   requiresScrollBar { _items.count > _visibleItemCapacity }
 
   update() {
+    if (!isFocused) {
+      Fiber.abort("List should not be updated if not focused!")
+    }
     var oldIndex = _selectedIndex
     var downRepeats = Hotkey["down"].repeats
     var upRepeats = Hotkey["up"].repeats
     if (downRepeats > 20) {
       if (downRepeats % 5 == 0) {
-        _selectedIndex = _selectedIndex + 1
+        selectedIndex = selectedIndex + 1
       }
-    } else if (upRepeats > 40) {
+    } else if (upRepeats > 20) {
       if (upRepeats % 5 == 0) {
-        _selectedIndex = _selectedIndex - 1
+        selectedIndex = selectedIndex - 1
       }
     } else if (Hotkey["down"].justPressed) {
-      _selectedIndex = _selectedIndex + 1
+      selectedIndex = selectedIndex + 1
     } else if (Hotkey["up"].justPressed) {
-      _selectedIndex = _selectedIndex - 1
+      selectedIndex = selectedIndex - 1
     }
-    coerceSelectedIndex()
 
     if (_moving) {
-      move(oldIndex, _selectedIndex)
+      move(oldIndex, selectedIndex)
     }
   }
 
@@ -245,7 +251,7 @@ class ListView {
 
   draw(x, y) {
     if (title != null) {
-       drawItemBackground(x + 4, y - 2, AppColor.background, AppColor.background)
+       drawItemRect(x + 4, y - 2, AppColor.background, AppColor.background)
        Canvas.print(title, x + 6, y, isFocused ? AppColor.gamer : AppColor.gray)
        y = y + _spacing
     }
@@ -266,7 +272,7 @@ class ListView {
         if (isSelectedItem && moving) {
           drawMoveIndicator(x + 4, itemY - 2)
         }
-        drawItemBackground(x + 4, itemY - 2, isFocused && isSelectedItem)
+        drawItemBackground(x + 4, itemY - 2, isFocused, isSelectedItem)
         _drawItemFn.call(items[itemIndex], x + 6, itemY)
         itemY = itemY + _spacing
       }
@@ -276,13 +282,21 @@ class ListView {
     }
   }
 
-  drawItemBackground(x, y, bgColor, borderColor) {
-    Canvas.rectfill(x, y, 50, 9, bgColor)
-    Canvas.rect(x, y, 50, 9, borderColor)
+  drawItemRect(x, y, bgColor, borderColor) {
+    Canvas.rectfill(x, y, width, 9, bgColor)
+    Canvas.rect(x, y, width, 9, borderColor)
   }
 
-  drawItemBackground(x, y, selected) {
-    drawItemBackground(x, y, Color.black, selected ? AppColor.gamer : AppColor.background)
+  drawItemBackground(x, y, focused, selected) {
+    var borderColor = null
+    if (focused && selected) {
+      borderColor = AppColor.gamer
+    } else if (selected) {
+      borderColor = AppColor.gray
+    } else {
+      borderColor = AppColor.background
+    }
+    drawItemRect(x, y, Color.black, borderColor)
   }
 
   drawSelectionIndicator(x, y) {
@@ -296,13 +310,14 @@ class ListView {
   }
 
   drawMoveIndicator(x, y) {
+    x = x + (50 - width) / 2
     Canvas.trianglefill(x + 22, y, x + 28, y, x + 25, y - 3, AppColor.gamer)
     Canvas.trianglefill(x + 22, y + 8, x + 28, y + 8, x + 25, y + 11, AppColor.gamer)
   }
 
   drawScrollBar(x, y) {
     // draw the border of the scroll bar
-    x = x + 57
+    x = x + width + 7
     y = y - 2
     var sbHeight = _visibleItemCapacity * _spacing - 3
     var sbWidth = 4
