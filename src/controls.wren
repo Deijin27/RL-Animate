@@ -446,3 +446,191 @@ class TextInputDialog {
     Canvas.print("ENTER >>", x + 40, y + 16, valid ? Color.green : AppColor.gray)
   }
 }
+
+class Field {
+  model { _model }
+  model=(v) { _model = v }
+
+  name { _name }
+  withName(v) { 
+    _name = v 
+    return this
+  }
+
+  getter { _getter }
+  withGetter(v) { 
+    _getter = v
+    return this
+  }
+
+  setter { _setter }
+  withSetter(v) { 
+    _setter = v
+    return this
+  }
+
+  getValue() {
+    return _getter.call(_model)
+  }
+
+  setValue(newValue) {
+    if (getValue() != newValue) {
+      _setter.call(_model, newValue)
+    }
+  }
+
+  update() {
+  }
+
+  getValueString() {
+    var val = getValue()
+    if (val == null) {
+      return "---"
+    } else {
+      return val.toString
+    }
+  }
+
+  draw(x, y) {
+    Canvas.print(name, x, y, AppColor.foreground)
+    Canvas.print(getValueString(), x + 40, y, AppColor.foreground)
+  }
+
+  static selector() { SelectorField.new() }
+  static number() { NumberField.new() }
+}
+
+class SelectorField is Field {
+  construct new() {
+    _items = []
+  }
+
+  items { _items }
+  withItems(v) { 
+    _items = v
+    return this
+  }
+
+  update() {
+    super.update()
+
+    var currentValue = getValue()
+    var currentIndex = _items.indexOf(currentValue)
+
+    var newIndex = currentIndex
+
+    var leftRepeats = Hotkey["left"].repeats
+    var rightRepeats = Hotkey["right"].repeats
+
+    if (leftRepeats > 20) {
+      if (leftRepeats % 5 == 0) {
+        newIndex = currentIndex - 1
+      }
+    } else if (rightRepeats > 20) {
+      if (rightRepeats % 5 == 0) {
+        newIndex = currentIndex + 1
+      }
+    } else if (Hotkey["left"].justPressed) {
+      newIndex = currentIndex - 1
+    } else if (Hotkey["right"].justPressed) {
+      newIndex = currentIndex + 1
+    }
+
+    newIndex = coerceIndex(newIndex)
+    var newValue = newIndex == -1 ? null : _items[newIndex]
+    setValue(newValue)
+  }
+  
+  coerceIndex(index) {
+    if (_items.count == 0) {
+      return -1
+    }
+    if (index < -1) {
+      return -1
+    } else if (index >= (_items.count - 1)) {
+      return _items.count - 1
+    } else {
+      return index
+    }
+  }
+}
+
+class NumberField is Field {
+  construct new() {
+    _min = 0
+    _max = 1000
+  }
+
+  min { _min }
+  withMin(v) { 
+    _min = v
+    return this
+  }
+
+  max { _max }
+  withMax(v) { 
+    _max = v
+    return this
+  }
+
+  update() {
+    super.update()
+
+    var currentValue = getValue()
+    var newValue = currentValue
+
+    var leftRepeats = Hotkey["left"].repeats
+    var rightRepeats = Hotkey["right"].repeats
+
+    if (leftRepeats > 20) {
+      if (leftRepeats % 5 == 0) {
+        newValue = currentValue - 1
+      }
+    } else if (rightRepeats > 20) {
+      if (rightRepeats % 5 == 0) {
+        newValue = currentValue + 1
+      }
+    } else if (Hotkey["left"].justPressed) {
+      newValue = currentValue - 1
+    } else if (Hotkey["right"].justPressed) {
+      newValue = currentValue + 1
+    }
+
+    newValue = coerceValue(newValue)
+    setValue(newValue)
+  }
+
+  coerceValue(value) {
+    if (value < min) {
+      return min
+    } else if (value > max) {
+      return max
+    } else {
+      return value
+    }
+  }
+}
+
+class Form is ListView {
+  construct new(title, fields) {
+    super(title, fields, Fn.new {|item, x, y| item.draw(x, y) })
+    _fields = fields
+  }
+
+  update() {
+    super.update()
+
+    var si = selectedItem
+    if (si != null) {
+      si.update()
+    }
+  }
+
+  model { _model }
+  model=(v) {
+    _model = v
+    for (f in _fields) {
+      f.model = _model
+    }
+  }
+}
