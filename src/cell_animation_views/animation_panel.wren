@@ -10,7 +10,7 @@ class AnimationPanel {
 
   name { "ANIMATIONS" }
 
-  allowSwapPanel { !_framesForm.isFocused }
+  allowSwapPanel { !_framesForm.isFocused && _state != "menu" }
 
   update() {
     if (_animationsList.isFocused) {
@@ -26,6 +26,9 @@ class AnimationPanel {
     _animationsList.draw(x, y)
     _framesList.draw(x + 65, y)
     _framesForm.draw(x + 130, y)
+    if (_menu != null || _textDialog != null) {
+      Canvas.rectfill(x - 20, y - 4, 400, 200, Color.hex("#00000060"))
+    }
     if (_menu != null) {
       _menu.draw(220, 160)
     }
