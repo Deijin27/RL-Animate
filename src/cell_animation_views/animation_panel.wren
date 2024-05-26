@@ -11,13 +11,22 @@ class Field {
   model=(v) { _model = v }
 
   name { _name }
-  name=(v) { _name = v }
+  withName(v) { 
+    _name = v 
+    return this
+  }
 
   getter { _getter }
-  getter=(v) { _getter = v }
+  withGetter(v) { 
+    _getter = v
+    return this
+  }
 
   setter { _setter }
-  setter=(v) { _setter = v }
+  withSetter(v) { 
+    _setter = v
+    return this
+  }
 
   getValue() {
     return _getter.call(_model)
@@ -53,7 +62,10 @@ class SelectorField is Field {
   }
 
   items { _items }
-  items=(v) { _items = v }
+  withItems(v) { 
+    _items = v
+    return this
+  }
 
   update() {
     super.update()
@@ -106,10 +118,16 @@ class NumberField is Field {
   }
 
   min { _min }
-  min=(v) { _min = v }
+  withMin(v) { 
+    _min = v
+    return this
+  }
 
   max { _max }
-  max=(v) { _max = v }
+  withMax(v) { 
+    _max = v
+    return this
+  }
 
   update() {
     super.update()
@@ -219,20 +237,21 @@ class AnimationPanel {
     var frameFields = []
 
     var clusterField = SelectorField.new()
-    clusterField.name = "Cluster"
-    clusterField.getter = Fn.new {|m| m.cluster }
-    clusterField.setter = Fn.new {|m, v| m.cluster = v }
-    clusterField.items = cellAnimationResource.clusters.map{|x| x.name }.toList
-    frameFields.add(clusterField)
+      .withName("Cluster")
+      .withGetter {|m| m.cluster }
+      .withSetter {|m, v| m.cluster = v }
+      .withItems(cellAnimationResource.clusters.map{|x| x.name }.toList)
 
     var durationField = NumberField.new()
-    durationField.name = "Duration"
-    durationField.getter = Fn.new {|m| m.duration }
-    durationField.setter = Fn.new {|m, v| 
-      m.duration = v 
-      _res.reset()
-    }
-    durationField.min = 1
+      .withName("Duration")
+      .withGetter {|m| m.duration }
+      .withSetter {|m, v| 
+        m.duration = v 
+        _res.reset()
+      }
+      .withMin(1)
+
+    frameFields.add(clusterField)
     frameFields.add(durationField)
 
     _framesForm = Form.new("FRAME", frameFields)
