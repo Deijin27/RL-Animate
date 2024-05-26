@@ -43,6 +43,8 @@ class ClusterPanel {
     _clusterInfo.isFocused = false
   }
 
+  allowSwapPanel { true }
+
   name { "CLUSTERS" }
 
   selection { _clustersList.selectedIndex }

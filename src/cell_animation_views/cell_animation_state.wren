@@ -32,7 +32,7 @@ class CellAnimationState {
     if (Hotkey["toggleBackground"].justPressed) {
       _drawBackground = !_drawBackground
     }
-    if (Hotkey["left"].justPressed || Hotkey["right"].justPressed) {
+    if (allowSwapPanel && (Hotkey["left"].justPressed || Hotkey["right"].justPressed)) {
       if (_currentPanel == _animationPanel) {
         _currentPanel = _clusterPanel
       } else {
@@ -102,6 +102,8 @@ class CellAnimationState {
    }
   }
 
+  allowSwapPanel { _currentPanel.allowSwapPanel }
+
   drawTopBar(x, y) {
     // background
     Canvas.rectfill(0, y, 400, 11, AppColor.raisedBackground)
@@ -117,7 +119,7 @@ class CellAnimationState {
     var text = "<< " + _currentPanel.name + " >>"
     var textWidth = Font[Canvas.font].getArea(text).x
 
-    Canvas.print(text, 200 - textWidth / 2, y + 3, AppColor.gamer)
+    Canvas.print(text, 200 - textWidth / 2, y + 3, allowSwapPanel ? AppColor.gamer : AppColor.gray)
   }
 
   drawImg(x, y) {

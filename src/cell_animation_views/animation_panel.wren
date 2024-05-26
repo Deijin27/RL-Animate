@@ -10,9 +10,6 @@ class Field {
   model { _model }
   model=(v) { _model = v }
 
-  isFocused { _isFocused }
-  isFocused=(v) { _isFocused = v }
-
   name { _name }
   name=(v) { _name = v }
 
@@ -27,25 +24,79 @@ class Field {
   }
 
   setValue(newValue) {
-    _setter.call(_model, newValue)
+    if (getValue() != newValue) {
+      _setter.call(_model, newValue)
+    }
   }
 
   update() {
   }
 
+  getValueString() {
+    var val = getValue()
+    if (val == null) {
+      return "---"
+    } else {
+      return val.toString
+    }
+  }
+
   draw(x, y) {
     Canvas.print(name, x, y, AppColor.foreground)
-    Canvas.print(getValue().toString, x + 40, y, AppColor.foreground)
+    Canvas.print(getValueString(), x + 40, y, AppColor.foreground)
   }
 }
 
 class SelectorField is Field {
   construct new() {
+    _items = []
   }
 
   items { _items }
   items=(v) { _items = v }
+
+  update() {
+    super.update()
+
+    var currentValue = getValue()
+    var currentIndex = _items.indexOf(currentValue)
+
+    var newIndex = currentIndex
+
+    var leftRepeats = Hotkey["left"].repeats
+    var rightRepeats = Hotkey["right"].repeats
+
+    if (leftRepeats > 20) {
+      if (leftRepeats % 5 == 0) {
+        newIndex = currentIndex - 1
+      }
+    } else if (rightRepeats > 20) {
+      if (rightRepeats % 5 == 0) {
+        newIndex = currentIndex + 1
+      }
+    } else if (Hotkey["left"].justPressed) {
+      newIndex = currentIndex - 1
+    } else if (Hotkey["right"].justPressed) {
+      newIndex = currentIndex + 1
+    }
+
+    newIndex = coerceIndex(newIndex)
+    var newValue = newIndex == -1 ? null : _items[newIndex]
+    setValue(newValue)
+  }
   
+  coerceIndex(index) {
+    if (_items.count == 0) {
+      return -1
+    }
+    if (index < -1) {
+      return -1
+    } else if (index >= (_items.count - 1)) {
+      return _items.count - 1
+    } else {
+      return index
+    }
+  }
 }
 
 class NumberField is Field {
@@ -104,6 +155,15 @@ class Form is ListView {
     _fields = fields
   }
 
+  update() {
+    super.update()
+
+    var si = selectedItem
+    if (si != null) {
+      si.update()
+    }
+  }
+
   model { _model }
   model=(v) {
     _model = v
@@ -118,6 +178,8 @@ class Form is ListView {
 class AnimationPanel {
 
   name { "ANIMATIONS" }
+
+  allowSwapPanel { !_framesForm.isFocused }
 
   update() {
     if (_animationsList.isFocused) {
@@ -148,8 +210,9 @@ class AnimationPanel {
     _animationsList = ListView.new("ANIMATIONS", _res.animations) {|item, x, y| 
       Canvas.print(item.name, x, y, AppColor.foreground)
     }
-    _framesList = ListView.new("FRAMES", []) {|item, x, y| 
-      Canvas.print(item.cluster, x, y, AppColor.foreground)
+    _framesList = ListView.new("FRAMES", []) {|item, x, y|
+      var clust = item.cluster
+      Canvas.print(clust == null ? "---" : clust, x, y, AppColor.foreground)
       Canvas.print(item.duration.toString, x + 40, y, AppColor.foreground)
     }
 
@@ -159,12 +222,17 @@ class AnimationPanel {
     clusterField.name = "Cluster"
     clusterField.getter = Fn.new {|m| m.cluster }
     clusterField.setter = Fn.new {|m, v| m.cluster = v }
+    clusterField.items = cellAnimationResource.clusters.map{|x| x.name }.toList
     frameFields.add(clusterField)
 
     var durationField = NumberField.new()
     durationField.name = "Duration"
     durationField.getter = Fn.new {|m| m.duration }
-    durationField.setter = Fn.new {|m, v| m.duration = v }
+    durationField.setter = Fn.new {|m, v| 
+      m.duration = v 
+      _res.reset()
+    }
+    durationField.min = 1
     frameFields.add(durationField)
 
     _framesForm = Form.new("FRAME", frameFields)

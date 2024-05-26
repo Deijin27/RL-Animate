@@ -227,7 +227,9 @@ class CellAnimationResource {
   drawAnimation(x, y, index) {
     var anim = _animations[index]
     var cluster = findCluster(anim.frame.cluster)
-    cluster.draw(x, y)
+    if (cluster != null) {
+      cluster.draw(x, y)
+    }
   }
 
   reset() {
