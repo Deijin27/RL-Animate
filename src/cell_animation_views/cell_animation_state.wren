@@ -142,7 +142,7 @@ class CellAnimationState {
     if (_currentPanel == _clusterPanel) {
       var selectedCell = _clusterPanel.selectedCell
       for (cell in _clusterPanel.selectedCluster.cells) {
-        Canvas.rect(x + cell.x, y + cell.y, cell.width, cell.height, (_clusterPanel.cellsListFocused && cell == selectedCell) ? AppColor.gamer : AppColor.gray)
+        Canvas.rect(x + cell.x, y + cell.y, cell.width, cell.height, (_clusterPanel.highlightSelectedCell && cell == selectedCell) ? AppColor.gamer : AppColor.gray)
       }
     }
   }

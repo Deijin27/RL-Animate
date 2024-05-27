@@ -31,6 +31,33 @@ class ClusterInfoForm {
 
 
 class ClusterPanel {
+
+  update() {
+    if (_clustersList.isFocused) {
+      updateClustersFocused()
+    } else if (_cellsList.isFocused) {
+      updateCellsFocused()
+    } else if (_clusterInfo.isFocused) {
+      updateClusterInfoFocused()
+    } else {
+      updateCellFocused()
+    }
+  }
+
+  draw(x, y) {
+    _clustersList.draw(x, y)
+
+    var cellsListY = y
+    var clusterInfoX = x + 65
+    if (_res.format == CellFormat.oneImagePerCluster) {
+      cellsListY = cellsListY + 20
+      _clusterInfo.draw(clusterInfoX, y)
+    }
+    _cellsList.draw(clusterInfoX, cellsListY)
+
+    _cellForm.draw(clusterInfoX + 65, y)
+  }
+
   construct new(cellAnimationResource) {
     _res = cellAnimationResource
     
@@ -43,16 +70,39 @@ class ClusterPanel {
     _clusterInfo = ClusterInfoForm.new()
     _cellsList.isFocused = false
     _clusterInfo.isFocused = false
+    initCellForm()
   }
 
   initCellForm() {
-
-
     var cellFields = []
+
+    cellFields.add(Field.number()
+      .withName("X")
+      .withGetter {|m| m.x }
+      .withSetter {|m, v| m.x = v }
+      .withMin(-100)
+      )
+
+    cellFields.add(Field.number()
+      .withName("Y")
+      .withGetter {|m| m.y }
+      .withSetter {|m, v| m.y = v }
+      .withMin(-100)
+      )
+
+    if (_res.format == CellFormat.oneImagePerCluster) {
+      // cellFields.add(Field.selector()
+      //   .withName("size")
+      //   .withItems()
+      //   )
+    }
+
     _cellForm = Form.new("CELL", cellFields)
+    _cellForm.width = 80
+    _cellForm.isFocused = false
   }
 
-  allowSwapPanel { true }
+  allowSwapPanel { !_cellForm.isFocused }
 
   name { "CLUSTERS" }
 
@@ -62,15 +112,7 @@ class ClusterPanel {
   cellsListFocused { _cellsList.isFocused }
   selectedCell { _cellsList.selectedItem }
 
-  update() {
-    if (_clustersList.isFocused) {
-      updateClustersFocused()
-    } else if (_cellsList.isFocused) {
-      updateCellsFocused()
-    } else if (_clusterInfo.isFocused) {
-      updateClusterInfoFocused()
-    }
-  }
+  highlightSelectedCell { _cellsList.isFocused || _cellForm.isFocused }
 
   updateClustersFocused() {
     if (Hotkey["navigateForward"].justPressed) {
@@ -85,6 +127,7 @@ class ClusterPanel {
       } else {
         _cellsList.items = []
       }
+      _cellForm.model = selectedCell
     }
   }
 
@@ -92,8 +135,12 @@ class ClusterPanel {
     if (Hotkey["navigateBack"].justPressed) {
       _cellsList.isFocused = false
       _clusterInfo.isFocused = true
+    } else if (Hotkey["navigateForward"].justPressed) {
+      _cellsList.isFocused = false
+      _cellForm.isFocused = true
     } else {
       _cellsList.update()
+      _cellForm.model = selectedCell
     }
   }
 
@@ -109,15 +156,12 @@ class ClusterPanel {
     }
   }
 
-  draw(x, y) {
-    _clustersList.draw(x, y)
-
-    var cellsListY = y
-    var clusterInfoX = x + 65
-    if (_res.format == CellFormat.oneImagePerCluster) {
-      cellsListY = cellsListY + 20
-      _clusterInfo.draw(clusterInfoX, y)
+  updateCellFocused() {
+    if (Hotkey["navigateBack"].justPressed) {
+      _cellForm.isFocused = false
+      _cellsList.isFocused = true
+    } else {
+      _cellForm.update()
     }
-    _cellsList.draw(clusterInfoX, cellsListY)
   }
 }

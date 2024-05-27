@@ -18,22 +18,40 @@ class CellFormat {
 
 class Cell {
   x { _x }
-  x=(v) { _x = v }
+  x=(v) { 
+    _x = v 
+    updateImage()
+  }
 
   y { _y }
-  y=(v) { _y = v }
+  y=(v) { 
+    _y = v 
+    updateImage()
+  }
 
   width { _width }
-  width=(v) { _width = v }
+  width=(v) { 
+    _width = v
+    updateImage()
+  }
 
   height { _height }
-  height=(v) { _height = v }
+  height=(v) { 
+    _height = v
+    updateImage()
+  }
 
   flipX { _flipX }
-  flipX=(v) { _flipX = v }
+  flipX=(v) { 
+    _flipX = v 
+    updateImage()
+  }
 
   flipY { _flipY }
-  flipY=(v) { _flipY = v }
+  flipY=(v) { 
+    _flipY = v
+    updateImage()
+  }
 
   image { _image }
 
@@ -42,7 +60,7 @@ class Cell {
   file { _file }
   file=(v) {
     _file = v
-    _originalImage = ImageData.load(dir + "/" + file)
+    loadFile()
     updateImage()
   }
 
@@ -56,12 +74,17 @@ class Cell {
     _doubleSize = element.attributeValue("double_size", Bool, false)
     
     if (_format == CellFormat.oneImagePerCell) {
-      file = element.attributeValue("file", String)
+      _file = element.attributeValue("file", String)
+      loadFile()
     } else if (_format == CellFormat.oneImagePerCluster) {
       _width = element.attributeValue("width", Num)
       _height = element.attributeValue("height", Num)
-      updateImage()
     }
+    updateImage()
+  }
+
+  loadFile() {
+    _originalImage = ImageData.load(dir + "/" + file)
   }
 
   updateImage() {
