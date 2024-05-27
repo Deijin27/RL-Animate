@@ -125,6 +125,12 @@ class Animation {
 
   update() {
     _counter = _counter + 1
+    if (_frames.count == 0) {
+      return
+    }
+    if (_frame == null) {
+      Fiber.abort("We have frames, but the current frame is null. Be sure to reset after modifying frames collection")
+    }
     if (_counter == frame.duration) {
       // move onto the next frame
       _counter = 0
@@ -226,6 +232,9 @@ class CellAnimationResource {
 
   drawAnimation(x, y, index) {
     var anim = _animations[index]
+    if (anim.frame == null) {
+      return // anim has no frames
+    }
     var cluster = findCluster(anim.frame.cluster)
     if (cluster != null) {
       cluster.draw(x, y)

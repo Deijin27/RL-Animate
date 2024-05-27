@@ -257,6 +257,7 @@ class ListView {
     }
 
     if (_items.count == 0) {
+      drawItemBackground(x + 4, y - 2, false, false)
       Canvas.print("no items", x + 6, y, AppColor.gray)
     } else {
       var itemY = y
@@ -470,6 +471,9 @@ class Field {
   }
 
   getValue() {
+    if (_model == null) {
+      return null
+    }
     return _getter.call(_model)
   }
 
