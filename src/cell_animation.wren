@@ -18,38 +18,66 @@ class CellFormat {
 
 class Cell {
   x { _x }
+  x=(v) { _x = v }
+
   y { _y }
+  y=(v) { _y = v }
+
   width { _width }
+  width=(v) { _width = v }
+
   height { _height }
+  height=(v) { _height = v }
+
   flipX { _flipX }
+  flipX=(v) { _flipX = v }
+
   flipY { _flipY }
+  flipY=(v) { _flipY = v }
+
   image { _image }
 
-  construct new(element, image, dir, format) {
+  format { _format }
 
+  file { _file }
+  file=(v) {
+    _file = v
+    _originalImage = ImageData.load(dir + "/" + file)
+    updateImage()
+  }
+
+  construct new(element, image, dir, format) {
+    _format = format
+    _originalImage = image
     _x = element.attributeValue("x", Num)
     _y = element.attributeValue("y", Num)
     _flipX = element.attributeValue("flip_x", Bool, false)
     _flipY = element.attributeValue("flip_y", Bool, false)
     _doubleSize = element.attributeValue("double_size", Bool, false)
     
+    if (_format == CellFormat.oneImagePerCell) {
+      file = element.attributeValue("file", String)
+    } else if (_format == CellFormat.oneImagePerCluster) {
+      _width = element.attributeValue("width", Num)
+      _height = element.attributeValue("height", Num)
+      updateImage()
+    }
+  }
+
+  updateImage() {
     var transform = {}
-    if (format == CellFormat.oneImagePerCell) {
-      var file = element.attributeValue("file", String)
-      image = ImageData.load(dir + "/" + file)
+    if (_format == CellFormat.oneImagePerCell) {
       if (_doubleSize) {
         transform["scaleX"] = 4/3
         transform["scaleY"] = 4/3
       }
-    } else if (format == CellFormat.oneImagePerCluster) {
-      _width = element.attributeValue("width", Num)
-      _height = element.attributeValue("height", Num)
+    } else if (_format == CellFormat.oneImagePerCluster) {
       transform["srcX"] = x 
       transform["srcY"] = y
       transform["srcW"] = width 
       transform["srcH"] = height
     }
-    _image = image.transform(transform)
+    _image = _originalImage.transform(transform)
   }
 }
 

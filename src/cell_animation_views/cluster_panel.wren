@@ -3,7 +3,7 @@ import "input" for Keyboard, Mouse
 import "io" for FileSystem
 import "cell_animation" for CellAnimationResource, CellFormat, Animation, Frame
 import "dome" for Process, Window, Log
-import "controls" for AppColor, Button, AppFont, ListView, Hotkey, Menu, TextInputDialog
+import "controls" for Form, Field, AppColor, Button, AppFont, ListView, Hotkey, Menu, TextInputDialog
 import "math" for Math
 
 class ClusterInfoForm {
@@ -28,6 +28,8 @@ class ClusterInfoForm {
   }
 }
 
+
+
 class ClusterPanel {
   construct new(cellAnimationResource) {
     _res = cellAnimationResource
@@ -41,6 +43,13 @@ class ClusterPanel {
     _clusterInfo = ClusterInfoForm.new()
     _cellsList.isFocused = false
     _clusterInfo.isFocused = false
+  }
+
+  initCellForm() {
+
+
+    var cellFields = []
+    _cellForm = Form.new("CELL", cellFields)
   }
 
   allowSwapPanel { true }
