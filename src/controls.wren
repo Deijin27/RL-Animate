@@ -170,8 +170,21 @@ class ListView {
   isFocused=(value) { _isFocused = value }
   selectedIndex { _selectedIndex }
   selectedIndex=(value) {
+    
     _selectedIndex = value
     coerceSelectedIndex()
+  }
+
+  validateSelectedIndex() {
+    if (!(_selectedIndex is Num)) {
+      Fiber.abort("selected index should be number but is %(_selectedIndex.type)")
+    }
+    if (!(_selectedIndex.isInteger)) {
+      Fiber.abort("selected index should be integer but is %(_selectedIndex)")
+    }
+    if (!(_selectedIndex >= 0)) {
+      Fiber.abort("selected index should be >= 0, but is %(_selectedIndex)")
+    }
   }
 
   selectedItem {
@@ -227,17 +240,22 @@ class ListView {
   }
 
   coerceSelectedIndex() {
-    if (scrollWrap) {
-      if (_selectedIndex == 0) {
-        // do nothing
-      } else if (_selectedIndex >= 0) {
-        _selectedIndex = _selectedIndex % _items.count
-      } else {
-        _selectedIndex = _items.count - (Math.abs(_selectedIndex) % _items.count)
+    if (_items.count != 0) {
+      if (scrollWrap) {
+        if (_selectedIndex == 0) {
+          // do nothing
+        } else if (_selectedIndex >= 0) {
+          _selectedIndex = _selectedIndex % _items.count
+        } else {
+          _selectedIndex = _items.count - (Math.abs(_selectedIndex) % _items.count)
+        }
       }
-    } else {
       _selectedIndex = Math.clamp(_selectedIndex, 0, _items.count - 1)
+    } else {
+      _selectedIndex = 0
     }
+    
+    validateSelectedIndex()
 
     // bring selected into view
     if (requiresScrollBar) {
@@ -580,7 +598,14 @@ class NumberField is Field {
   update() {
     super.update()
 
+    if (model == null) {
+      return
+    }
+
     var currentValue = getValue()
+    if (!(currentValue is Num)) {
+      Fiber.abort("Value of number field should be Num, but is '%(currentValue.type)'")
+    }
     var newValue = currentValue
 
     var leftRepeats = Hotkey["left"].repeats
