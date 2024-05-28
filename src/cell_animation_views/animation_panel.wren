@@ -144,9 +144,7 @@ class AnimationPanel {
 
     _animMenuActions = {
       "Add": Fn.new {
-        var targetPos = _animationsList.items.count > 0 ? _animationsList.selectedIndex + 1 : 0
-        _animationsList.items.insert(targetPos, Animation.new())
-        _animationsList.selectedIndex = targetPos
+        _animationsList.addItem(Animation.new())
         beginRename()
       },
       "Rename" : Fn.new {
@@ -157,22 +155,18 @@ class AnimationPanel {
         _animationsList.moving = true
       },
       "Delete": Fn.new {
-        _animationsList.items.removeAt(_animationsList.selectedIndex)
+        _animationsList.deleteSelected()
         _state = "list"
       },
       "Duplicate": Fn.new {
-        var targetPos = _animationsList.items.count > 0 ? _animationsList.selectedIndex + 1 : 0
-        _animationsList.items.insert(targetPos, selectedAnim.clone())
-        _animationsList.selectedIndex = targetPos
-        _menu = null
+        _animationsList.addItem(selectedAnim.clone())
         beginRename()
       }
     }
 
     _frameMenuActions = {
       "Add": Fn.new {
-        var targetPos = _framesList.items.count > 0 ? _framesList.selectedIndex + 1 : 0
-        _framesList.items.insert(targetPos, Frame.new())
+        _framesList.addItem(Frame.new())
         _state = "list"
       },
       "Move" : Fn.new {
@@ -180,13 +174,12 @@ class AnimationPanel {
         _framesList.moving = true
       },
       "Delete": Fn.new {
-        _framesList.items.removeAt(_framesList.selectedIndex)
+        _framesList.deleteSelected()
         _res.reset()
         _state = "list"
       },
       "Duplicate": Fn.new {
-        var targetPos = _framesList.items.count > 0 ? _framesList.selectedIndex + 1 : 0
-        _framesList.items.insert(targetPos, selectedFrame.clone())
+        _framesList.addItem(selectedFrame.clone())
         _state = "list"
       }
     }
@@ -243,7 +236,7 @@ class AnimationPanel {
       // return to animations list
       _framesList.isFocused = false
       _animationsList.isFocused = true
-    } else if (Hotkey["navigateForward"].justPressed) {
+    } else if (_framesList.items.count > 0 && Hotkey["navigateForward"].justPressed) {
       _framesList.isFocused = false
       _framesForm.isFocused = true
     } else {

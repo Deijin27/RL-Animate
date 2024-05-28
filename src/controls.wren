@@ -201,6 +201,16 @@ class ListView {
 
   requiresScrollBar { _items.count > _visibleItemCapacity }
 
+  addItem(newItem) {
+    var targetPos = items.count > 0 ? selectedIndex + 1 : 0
+    items.insert(targetPos, newItem)
+    selectedIndex = targetPos
+  }
+
+  deleteSelected() {
+    return items.removeAt(selectedIndex)
+  }
+
   update() {
     if (!isFocused) {
       Fiber.abort("List should not be updated if not focused!")

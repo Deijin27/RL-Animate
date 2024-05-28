@@ -1,46 +1,20 @@
 import "graphics" for Canvas, Color, ImageData, Font
 import "input" for Keyboard, Mouse
 import "io" for FileSystem
-import "cell_animation" for CellAnimationResource, CellFormat, Animation, Frame
+import "cell_animation" for CellAnimationResource, CellFormat, Animation, Frame, Cell, Cluster
 import "dome" for Process, Window, Log
 import "controls" for Form, Field, AppColor, Button, AppFont, ListView, Hotkey, Menu, TextInputDialog
 import "math" for Math
-
-class ClusterInfoForm {
-  construct new() {
-    _isFocused = false
-    _title = "FILE"
-  }
-  title { _title }
-  isFocused { _isFocused }
-  isFocused=(value) { _isFocused = value }
-  cluster { _cluster }
-  cluster=(value) { _cluster = value }
-
-  update() {
-    
-  }
-
-  draw(x, y) {
-    Canvas.print(title, x + 6, y, isFocused ? AppColor.domePurple : AppColor.gray)
-    y = y + 10
-    Canvas.print(_cluster.file, x + 6, y, AppColor.foreground)
-  }
-}
-
-
 
 class ClusterPanel {
 
   update() {
     if (_clustersList.isFocused) {
-      updateClustersFocused()
+      _clustersStateActions[_state].call()
     } else if (_cellsList.isFocused) {
-      updateCellsFocused()
-    } else if (_clusterInfo.isFocused) {
-      updateClusterInfoFocused()
+      _cellsStateActions[_state].call()
     } else {
-      updateCellFocused()
+     _cellStateActions[_state].call()
     }
   }
 
@@ -50,12 +24,22 @@ class ClusterPanel {
     var cellsListY = y
     var clusterInfoX = x + 65
     if (_res.format == CellFormat.oneImagePerCluster) {
-      cellsListY = cellsListY + 20
-      _clusterInfo.draw(clusterInfoX, y)
+      // cellsListY = cellsListY + 20
+      // _clusterInfo.draw(clusterInfoX, y)
     }
     _cellsList.draw(clusterInfoX, cellsListY)
 
     _cellForm.draw(clusterInfoX + 65, y)
+
+    if (_menu != null || _textDialog != null) {
+      Canvas.rectfill(x - 20, y - 4, 400, 200, Color.hex("#00000060"))
+    }
+    if (_menu != null) {
+      _menu.draw(220, 160)
+    }
+    if (_textDialog != null) {
+      _textDialog.draw(200, 180)
+    }
   }
 
   construct new(cellAnimationResource) {
@@ -67,10 +51,135 @@ class ClusterPanel {
     _cellsList = ListView.new("CELLS", []) {|item, x, y| 
       Canvas.print("[%(item.x),%(item.y),%(item.width),%(item.height)]", x, y, AppColor.foreground)
     }
-    _clusterInfo = ClusterInfoForm.new()
     _cellsList.isFocused = false
-    _clusterInfo.isFocused = false
     initCellForm()
+    _state = "list"
+
+    _clustersStateActions = {
+      "list": Fn.new {
+        updateClustersFocused()
+      },
+      "rename" : Fn.new {
+        _textDialog.update()
+        if (_textDialog.complete) {
+          if (_textDialog.proceed) {
+            selectedCluster.name = _textDialog.text
+          }
+          _state = "list"
+          _textDialog = null
+        }
+      },
+      "menu" : Fn.new {
+        _menu.update()
+        if (_menu.complete) {
+          if (_menu.proceed) {
+             _clusterMenuActions[_menu.selected].call()
+          } else {
+            _state = "list"
+          }
+          _menu = null
+        }
+      },
+      "move" : Fn.new {
+        // TODO: have some text per-state, maybe which replaces the left top bar text
+        // and this says "MOVING ITEM..." etc.
+        if (Hotkey["navigateBack"].justPressed) {
+          _state = "list"
+          _clustersList.moving = false
+        } else {
+          _clustersList.update()
+        }
+      },
+    }
+
+    _cellsStateActions = {
+      "list": Fn.new {
+        updateCellsFocused()
+      },
+      "menu": Fn.new {
+       _menu.update()
+        if (_menu.complete) {
+          if (_menu.proceed) {
+             _cellsMenuActions[_menu.selected].call()
+          } else {
+            _state = "list"
+          }
+          _menu = null
+        }
+      },
+      "move" : Fn.new {
+        if (Hotkey["navigateBack"].justPressed) {
+          _state = "list"
+          _cellsList.moving = false
+        } else {
+          _cellsList.update()
+        }
+      }
+    }
+
+    _cellStateActions = {
+      "list": Fn.new {
+        updateCellFocused()
+      }
+    }
+    
+    _clusterMenuActions = {
+      "Add": Fn.new {
+        _clustersList.addItem(_res.newCluster())
+        beginRename()
+      },
+      "Rename" : Fn.new {
+        beginRename()
+      },
+      "Move" : Fn.new {
+        _state = "move"
+        _clustersList.moving = true
+      },
+      "Delete": Fn.new {
+        _clustersList.deleteSelected()
+        _state = "list"
+      },
+      "Duplicate": Fn.new {
+        _clustersList.addItem(selectedCluster.clone())
+        beginRename()
+      }
+    }
+
+    _cellsMenuActions = {
+      "Add": Fn.new {
+        _cellsList.addItem(selectedCluster.newCell())
+        _state = "list"
+      },
+      "Move" : Fn.new {
+        _state = "move"
+        _cellsList.moving = true
+      },
+      "Delete": Fn.new {
+        _cellsList.deleteSelected()
+        _res.reset()
+        _state = "list"
+      },
+      "Duplicate": Fn.new {
+        _cellsList.addItem(selectedCell.clone())
+        _state = "list"
+      }
+    }
+  }
+
+  beginRename() {
+    _state = "rename"
+    _textDialog = TextInputDialog.new(selectedCluster.name) {|text|
+      // validate
+      if (text.count == 0) {
+        return false
+      }
+      for (i in 0..._clustersList.items.count) {
+        if (i != _clustersList.selectedIndex && _clustersList.items[i].name == text) {
+          return false
+        }
+      }
+      return true
+    }
   }
 
   initCellForm() {
@@ -115,15 +224,17 @@ class ClusterPanel {
   highlightSelectedCell { _cellsList.isFocused || _cellForm.isFocused }
 
   updateClustersFocused() {
-    if (Hotkey["navigateForward"].justPressed) {
-      _clusterInfo.isFocused = true
+    if (Hotkey["menu"].justPressed) {
+      _menu = _clustersList.items.count == 0 ? Menu.new(["Add"]) : Menu.new(["Add", "Rename", "Move", "Delete", "Duplicate"])
+      _state = "menu"
+    } else if (_clustersList.items.count > 0 && Hotkey["navigateForward"].justPressed) {
+      _cellsList.isFocused = true
       _clustersList.isFocused = false
     } else {
       _clustersList.update()
       var sc = _clustersList.selectedItem
       if (sc != null) {
         _cellsList.items = sc.cells
-        _clusterInfo.cluster = sc
       } else {
         _cellsList.items = []
       }
@@ -132,27 +243,18 @@ class ClusterPanel {
   }
 
   updateCellsFocused() {
-    if (Hotkey["navigateBack"].justPressed) {
+     if (Hotkey["menu"].justPressed) {
+      _menu = _cellsList.items.count == 0 ? Menu.new(["Add"]) : Menu.new(["Add", "Move", "Delete", "Duplicate"])
+      _state = "menu"
+    } else if (Hotkey["navigateBack"].justPressed) {
       _cellsList.isFocused = false
-      _clusterInfo.isFocused = true
-    } else if (Hotkey["navigateForward"].justPressed) {
+      _clustersList.isFocused = true
+    } else if (_cellsList.items.count > 0 && Hotkey["navigateForward"].justPressed) {
       _cellsList.isFocused = false
       _cellForm.isFocused = true
     } else {
       _cellsList.update()
       _cellForm.model = selectedCell
-    }
-  }
-
-  updateClusterInfoFocused() {
-    if (Hotkey["navigateForward"].justPressed) {
-      _clusterInfo.isFocused = false
-      _cellsList.isFocused = true
-    } else if (Hotkey["navigateBack"].justPressed) {
-      _clusterInfo.isFocused = false
-      _clustersList.isFocused = true
-    } else {
-      _clusterInfo.update()
     }
   }
 

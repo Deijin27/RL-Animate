@@ -66,6 +66,7 @@ class Cell {
 
   construct new(element, image, dir, format) {
     _format = format
+    _dir = dir
     _originalImage = image
     _x = element.attributeValue("x", Num)
     _y = element.attributeValue("y", Num)
@@ -83,8 +84,26 @@ class Cell {
     updateImage()
   }
 
+  construct new(image, dir, format) {
+    _format = format
+    _dir = dir
+    _originalImage = image
+    _x = 0
+    _y = 0
+    _flipX = false
+    _flipY = false
+    _doubleSize = false
+
+    if (_format == CellFormat.oneImagePerCell) {
+      _file = null
+    } else if (_format == CellFormat.oneImagePerCluster) {
+      _width = 1
+      _height = 1
+    }
+  }
+
   loadFile() {
-    _originalImage = ImageData.load(dir + "/" + file)
+    _originalImage = ImageData.load(_dir + "/" + _file)
   }
 
   updateImage() {
@@ -106,17 +125,33 @@ class Cell {
 
 class Cluster {
   name { _name }
+  name=(v) { _name = v }
   file { _file }
+  file=(v) { _file = v }
   cells { _cells }
 
   construct new(element, dir, format) {
+    _dir = dir
+    _format = format
     _name = element.attributeValue("name", String)
-    var image = null
+    _image = null
     if (format == CellFormat.oneImagePerCluster) {
       _file = element.attributeValue("file", String)
-      image = ImageData.load(dir  + "/" + file)
+      _image = ImageData.load(dir  + "/" + file)
     }
-    _cells = element.elements("cell").map {|x| Cell.new(x, image, dir, format) }.toList
+    _cells = element.elements("cell").map {|x| Cell.new(x, _image, dir, format) }.toList
+  }
+
+  construct new(dir, format) {
+    _dir = dir
+    _format = format
+    _name = "cluster_new"
+    _file = null
+    _cells = []
+  }
+
+  newCell() {
+    return Cell.new(_image, _dir, _format)
   }
 
   draw(x, y) {
@@ -126,6 +161,15 @@ class Cluster {
     for (cid in (cells.count-1)..0) {
       var cell = cells[cid]
       Canvas.draw(cell.image, x + cell.x, y + cell.y)
+    }
+  }
+
+  clone() {
+    var n = Cluster.new()
+    n.name = name
+    n.file = file
+    for (c in cells) {
+      n.cells.add(c.clone())
     }
   }
 }
@@ -236,8 +280,13 @@ class CellAnimationResource {
     }
     return -1
   }
+
+  newCluster() {
+    return Cluster.new(_dir, _format)
+  }
   
   construct new(file, dir) {
+    _dir = dir
     Log.debug("Loading animation file '%(file)'")
     var document = XDocument.parse(FileSystem.load(file))
     var root = document.elementOrAbort("nitro_cell_animation_resource")
