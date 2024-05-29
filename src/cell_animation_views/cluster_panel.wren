@@ -1,7 +1,7 @@
 import "graphics" for Canvas, Color, ImageData, Font
 import "input" for Keyboard, Mouse
 import "io" for FileSystem
-import "cell_animation" for CellAnimationResource, CellFormat, Animation, Frame, Cell, Cluster
+import "cell_animation" for CellAnimationResource, CellFormat, Animation, Frame, Cell, Cluster, CellSize
 import "dome" for Process, Window, Log
 import "controls" for Form, Field, AppColor, Button, AppFont, ListView, Hotkey, Menu, TextInputDialog
 import "math" for Math
@@ -200,10 +200,12 @@ class ClusterPanel {
       )
 
     if (_res.format == CellFormat.oneImagePerCluster) {
-      // cellFields.add(Field.selector()
-      //   .withName("size")
-      //   .withItems()
-      //   )
+      cellFields.add(Field.selector()
+        .withName("size")
+        .withItems(CellSize.validSizes)
+        .withGetter {|m| m.size}
+        .withSetter {|m, v| m.size = v }
+        )
     }
 
     _cellForm = Form.new("CELL", cellFields)

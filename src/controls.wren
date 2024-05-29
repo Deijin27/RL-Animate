@@ -535,11 +535,18 @@ class Field {
 class SelectorField is Field {
   construct new() {
     _items = []
+    _allowNull = false
   }
 
   items { _items }
   withItems(v) { 
     _items = v
+    return this
+  }
+
+  allowNull { _allowNull }
+  withAllowNull(v) {
+    _allowNull = v
     return this
   }
 
@@ -577,8 +584,8 @@ class SelectorField is Field {
     if (_items.count == 0) {
       return -1
     }
-    if (index < -1) {
-      return -1
+    if (index < 0) {
+      return allowNull ? -1 : 0
     } else if (index >= (_items.count - 1)) {
       return _items.count - 1
     } else {

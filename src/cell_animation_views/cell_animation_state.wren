@@ -130,8 +130,8 @@ class CellAnimationState {
     if (_all) {
       _cellAnimationResource.draw(x, y)
     } else if (_currentPanel == _animationPanel) {
-      if (_animationPanel.framesListFocused) {
-        _cellAnimationResource.findCluster(_animationPanel.selectedFrame.cluster).draw(x, y)
+      if (_animationPanel.drawSelectedFrame) {
+        _animationPanel.selectedFrame.cluster.draw(x, y)
       } else {
         _cellAnimationResource.drawAnimation(x, y, _animationPanel.selection)
       }

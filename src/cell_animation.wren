@@ -16,7 +16,67 @@ class CellFormat {
   static all { [oneImagePerCell, oneImagePerCluster] }
 }
 
+class Shape {
+  static square { "Square" }
+  static wide { "Wide" }
+  static tall { "Tall" }
+}
+
+class Scale {
+  static small { "Small" }
+  static medium { "Medium" }
+  static large { "Large" }
+  static xlarge { "XLarge" }
+}
+
+class CellSize {
+  construct new(shape, scale, width, height) {
+    _shape = shape
+    _scale = scale
+    _width = width
+    _height = height
+    _str = "%(width)x%(height)"
+  }
+  shape { _shape }
+  scale { _scale }
+  width { _width }
+  height { _height }
+  toString { _str }
+
+  static validSizes { __validSizes }
+
+  static init_() {
+    __validSizes = [
+      CellSize.new(Shape.square, Scale.small, 8, 8),
+      CellSize.new(Shape.square, Scale.medium, 16, 16),
+      CellSize.new(Shape.square, Scale.large, 32, 32),
+      CellSize.new(Shape.square, Scale.xlarge, 64, 64),
+
+      CellSize.new(Shape.wide, Scale.small, 16, 8),
+      CellSize.new(Shape.wide, Scale.medium, 32, 8),
+      CellSize.new(Shape.wide, Scale.large, 32, 16),
+      CellSize.new(Shape.wide, Scale.xlarge, 64, 32),
+
+      CellSize.new(Shape.tall, Scale.small, 8, 16),
+      CellSize.new(Shape.tall, Scale.medium, 8, 32),
+      CellSize.new(Shape.tall, Scale.large, 16, 32),
+      CellSize.new(Shape.tall, Scale.xlarge, 32, 64),
+    ]
+  }
+
+  static get(width, height) {
+    for (i in __validSizes) {
+      if (i.width == width && i.height == height) {
+        return i
+      }
+    }
+    return null
+  }
+}
+CellSize.init_()
+
 class Cell {
+
   x { _x }
   x=(v) { 
     _x = v 
@@ -26,6 +86,13 @@ class Cell {
   y { _y }
   y=(v) { 
     _y = v 
+    updateImage()
+  }
+
+  size { CellSize.get(width, height) }
+  size=(v) {
+    _width = v.width
+    _height = v.height
     updateImage()
   }
 
@@ -80,6 +147,9 @@ class Cell {
     } else if (_format == CellFormat.oneImagePerCluster) {
       _width = element.attributeValue("width", Num)
       _height = element.attributeValue("height", Num)
+      if (size == null) {
+        size = CellSize.validSizes[0]
+      }
     }
     updateImage()
   }
@@ -129,6 +199,8 @@ class Cluster {
   file { _file }
   file=(v) { _file = v }
   cells { _cells }
+
+  toString { _name }
 
   construct new(element, dir, format) {
     _dir = dir
@@ -180,13 +252,18 @@ class Frame {
   duration { _duration }
   duration=(value) { _duration = value }
   
-  construct new(element) {
-    _cluster = element.attributeValue("cluster", String)
+  construct new(element, clusters) {
+    var clusterName = element.attributeValue("cluster", String)
+    for (c in clusters) {
+      if (c.name == clusterName) {
+        _cluster = c
+      }
+    }
     _duration = element.attributeValue("duration", Num)
   }
 
   construct new() {
-    _cluster = "cluster_0"
+    _cluster = null
     _duration = 1
   }
 
@@ -204,11 +281,11 @@ class Animation {
   frames { _frames }
   frame { _frame }
 
-  construct new(element) {
+  construct new(element, clusters) {
     _name = element.attributeValue("name", String)
     Log.debug("Loaded animation %(_name)")
     // frames with zero duration are ignored
-    _frames = element.elements("frame").map {|x| Frame.new(x) }.toList.where{|x| x.duration > 0 }.toList
+    _frames = element.elements("frame").map {|x| Frame.new(x, clusters) }.toList.where{|x| x.duration > 0 }.toList
     reset()
   }
 
@@ -307,7 +384,7 @@ class CellAnimationResource {
     }
     // animations without frames are ignored
     _animations = []
-    for (anim in root.elementOrAbort("animation_collection").elements("animation").map{|x| Animation.new(x)}) {
+    for (anim in root.elementOrAbort("animation_collection").elements("animation").map{|x| Animation.new(x, _clusters)}) {
       if (anim.frames.count > 0 && (playAll || play == anim.name)) {
         _animations.add(anim)
       }
@@ -335,7 +412,7 @@ class CellAnimationResource {
     if (anim.frame == null) {
       return // anim has no frames
     }
-    var cluster = findCluster(anim.frame.cluster)
+    var cluster = anim.frame.cluster
     if (cluster != null) {
       cluster.draw(x, y)
     }

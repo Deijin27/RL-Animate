@@ -54,7 +54,8 @@ class AnimationPanel {
       .withName("Cluster")
       .withGetter {|m| m.cluster }
       .withSetter {|m, v| m.cluster = v }
-      .withItems(cellAnimationResource.clusters.map{|x| x.name }.toList)
+      .withItems(cellAnimationResource.clusters)
+      .withAllowNull(true)
 
     var durationField = Field.number()
       .withName("Duration")
@@ -205,8 +206,7 @@ class AnimationPanel {
   framesListFocused { _framesList.isFocused }
   selectedAnim { _animationsList.selectedItem }
   selectedFrame { _framesList.selectedItem }
-
-  
+  drawSelectedFrame { _framesList.isFocused || _framesForm.isFocused }
 
   updateAnimFocused() {
     if (Hotkey["menu"].justPressed) {
