@@ -132,6 +132,11 @@ class Cell {
     updateImage()
   }
 
+  originalImage=(v) {
+    _originalImage = v
+    updateImage()
+  }
+
   construct new(element, image, dir, format) {
     _format = format
     _dir = dir
@@ -211,7 +216,13 @@ class Cluster {
   name { _name }
   name=(v) { _name = v }
   file { _file }
-  file=(v) { _file = v }
+  file=(v) { 
+    _file = v
+    loadImage()
+    for (cell in _cells) {
+      cell.originalImage = _image
+    }
+  }
   cells { _cells }
 
   toString { _name }
@@ -223,9 +234,13 @@ class Cluster {
     _image = null
     if (format == CellFormat.oneImagePerCluster) {
       _file = element.attributeValue("file", String)
-      _image = ImageData.load(dir  + "/" + file)
+      loadImage()
     }
     _cells = element.elements("cell").map {|x| Cell.new(x, _image, dir, format) }.toList
+  }
+
+  loadImage() {
+    _image = ImageData.load(_dir  + "/" + _file)
   }
 
   construct new(dir, format) {
