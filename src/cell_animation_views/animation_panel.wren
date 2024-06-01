@@ -27,7 +27,7 @@ class AnimationPanel {
     _framesList.draw(x + 65, y)
     _framesForm.draw(x + 130, y)
     if (_menu != null || _textDialog != null) {
-      Canvas.rectfill(x - 20, y - 4, 400, 200, Color.hex("#00000060"))
+      Canvas.rectfill(x - 20, y - 4, 400, 200, AppColor.shadow)
     }
     if (_menu != null) {
       _menu.draw(220, 160)

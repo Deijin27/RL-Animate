@@ -5,6 +5,7 @@ import "cell_animation" for CellAnimationResource, CellFormat, Animation, Frame,
 import "dome" for Process, Window, Log
 import "controls" for Form, Field, AppColor, Button, AppFont, ListView, Hotkey, Menu, TextInputDialog
 import "math" for Math
+import "util" for FileUtil
 
 class ClusterPanel {
 
@@ -201,11 +202,19 @@ class ClusterPanel {
 
     if (_res.format == CellFormat.oneImagePerCluster) {
       cellFields.add(Field.selector()
-        .withName("size")
+        .withName("Size")
         .withItems(CellSize.validSizes)
         .withGetter {|m| m.size}
         .withSetter {|m, v| m.size = v }
         )
+    } else if (_res.format == CellFormat.oneImagePerCell) {
+      _fileField = Field.selector()
+        .withName("File")
+        .withGetter {|m| m.file }
+        .withSetter {|m, v| m.file = v }
+        .withAllowNull(true)
+      updateFilesList()
+      cellFields.add(_fileField)
     }
 
     _cellForm = Form.new("CELL", cellFields)
@@ -265,7 +274,16 @@ class ClusterPanel {
       _cellForm.isFocused = false
       _cellsList.isFocused = true
     } else {
+      updateFilesList()
       _cellForm.update()
     }
+  }
+
+  updateFilesList() {
+    if (_fileField == null) {
+      return
+    }
+    var newItems = FileUtil.loadImagesRecursive(_res.dir)
+    _fileField.withItems(newItems)
   }
 }

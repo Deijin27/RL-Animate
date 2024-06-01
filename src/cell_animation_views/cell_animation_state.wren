@@ -12,11 +12,6 @@ class CellAnimationState {
   construct new(dir, animationFile) {
     _drawBackground = true
     _cellAnimationResource = CellAnimationResource.new(animationFile, dir)
-    if (_cellAnimationResource.background != null) {
-      var bgFile = dir + "/" + _cellAnimationResource.background
-      _background = ImageData.load(bgFile)
-    }
-
     _animationPanel = AnimationPanel.new(_cellAnimationResource)
     _clusterPanel = ClusterPanel.new(_cellAnimationResource)
     _currentPanel = _animationPanel
@@ -44,8 +39,10 @@ class CellAnimationState {
   }
 
   draw(dt) {
-    drawBackground()
-    drawImg(2, 2)
+    var areaW = 600
+    var areaH = 124
+    drawBackground(areaW, areaH)
+    drawImg(2, 2, areaW, areaH)
     drawTopBar(0, 124)
     _currentPanel.draw(10, 140)
     drawBottomBar()
@@ -59,11 +56,13 @@ class CellAnimationState {
     Canvas.line(0, top, w, top, Color.black)
   }
 
-  drawBackground() {
+  background { _cellAnimationResource.backgroundImage }
+
+  drawBackground(areaW, areaH) {
     //Canvas.rectfill(0, 124, 600, 200, Color.hex("#817bb7"))
     var gridPos = 0 - (_updateCounter / 7) % 7 
-    drawGrid(gridPos, 124, 600, 200, 7, Color.hex("#585289"), Color.hex("#3c3768"))
-    drawCheckerboard(0, 0, 600, 124, 6, Color.black, Color.hex("#101010"))
+    drawGrid(gridPos, areaH, areaW, 200, 7, Color.hex("#585289"), Color.hex("#3c3768"))
+    drawCheckerboard(0, 0, areaW, areaH, 6, Color.black, Color.hex("#101010"))
     //Canvas.line(6, 0, 6, 124, Color.red)
     //Canvas.line(0, 6, 600, 6, Color.blue)
   }
@@ -122,9 +121,9 @@ class CellAnimationState {
     Canvas.print(text, 200 - textWidth / 2, y + 3, allowSwapPanel ? AppColor.gamer : AppColor.gray)
   }
 
-  drawImg(x, y) {
-    if (_background != null && _drawBackground) {
-      Canvas.draw(_background, x, y)
+  drawImg(x, y, areaW, areaH) {
+    if (background != null && _drawBackground) {
+      Canvas.draw(background, x, y)
     }
 
     if (_all) {
@@ -136,14 +135,50 @@ class CellAnimationState {
         _cellAnimationResource.drawAnimation(x, y, _animationPanel.selection)
       }
     } else {
-      _clusterPanel.selectedCluster.draw(x, y)
+      _clusterPanel.selectedCluster.drawFull(x, y)
+      if (_clusterPanel.highlightSelectedCell) {
+        var sc = _clusterPanel.selectedCell
+        if (sc != null) {
+          drawShadowBorder(0, 0, areaW, areaH, x + sc.x, y + sc.y, sc.width, sc.height)
+        } else {
+          drawShadowBorder(0, 0, areaW, areaH, 0, 0, 0, 0)
+        }
+      }
     }
 
     if (_currentPanel == _clusterPanel) {
       var selectedCell = _clusterPanel.selectedCell
       for (cell in _clusterPanel.selectedCluster.cells) {
-        Canvas.rect(x + cell.x, y + cell.y, cell.width, cell.height, (_clusterPanel.highlightSelectedCell && cell == selectedCell) ? AppColor.gamer : AppColor.gray)
+        Canvas.rect(x + cell.x, y + cell.y, cell.width, cell.height, (_clusterPanel.highlightSelectedCell && cell != selectedCell) ? AppColor.shadowGray : AppColor.shadowWhite)
       }
+    }
+  }
+
+  drawShadowBorder(x, y, w, h, cx, cy, cw, ch) {
+    if (cw == 0 || ch == 0) {
+      Canvas.rectfill(x, y, w, h, AppColor.shadow)
+      return
+    }
+    var lw = cx - x
+    var rw = (x + w) - (cx + cw)
+    var th = cy - y
+    var bh = (y + h) - (cy + ch)
+
+    // top
+    if (th > 0) {
+      Canvas.rectfill(x, y, w, th, AppColor.shadow)
+    }
+    // left
+    if (lw > 0) {
+      Canvas.rectfill(x, cy, lw, ch, AppColor.shadow)
+    }
+    // right
+    if (rw > 0) {
+      Canvas.rectfill(cx + cw, cy, rw, ch, AppColor.shadow)
+    }
+    // bottom
+    if (bh > 0) {
+      Canvas.rectfill(x, cy + ch, w, bh, AppColor.shadow)
     }
   }
 }

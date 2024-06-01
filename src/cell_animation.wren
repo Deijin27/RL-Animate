@@ -9,6 +9,7 @@ import "io" for FileSystem
 import "util" for StringUtil
 import "graphics" for ImageData, Canvas
 import "dome" for Log
+import "math" for Math
 
 class CellFormat {
   static oneImagePerCell { "OneImagePerCell" }
@@ -147,9 +148,9 @@ class Cell {
     } else if (_format == CellFormat.oneImagePerCluster) {
       _width = element.attributeValue("width", Num)
       _height = element.attributeValue("height", Num)
-      if (size == null) {
-        size = CellSize.validSizes[0]
-      }
+    }
+    if (size == null) {
+      size = CellSize.validSizes[0]
     }
     updateImage()
   }
@@ -167,13 +168,22 @@ class Cell {
     if (_format == CellFormat.oneImagePerCell) {
       _file = null
     } else if (_format == CellFormat.oneImagePerCluster) {
-      _width = 1
-      _height = 1
+      var validSize = CellSize.validSizes[0]
+      _width = validSize.width
+      _height = validSize.height
     }
+    if (size == null) {
+      size = CellSize.validSizes[0]
+    }
+    updateImage()
   }
 
   loadFile() {
     _originalImage = ImageData.load(_dir + "/" + _file)
+    if (_format == CellFormat.oneImagePerCell) {
+      _width = _originalImage.width
+      _height = _originalImage.height
+    }
   }
 
   updateImage() {
@@ -190,6 +200,10 @@ class Cell {
       transform["srcH"] = height
     }
     _image = _originalImage.transform(transform)
+  }
+
+  draw(x, y) {
+    Canvas.draw(image, x + this.x, y + this.y)
   }
 }
 
@@ -226,13 +240,23 @@ class Cluster {
     return Cell.new(_image, _dir, _format)
   }
 
+  // draw non-cropped cells
   draw(x, y) {
     if (cells.count == 0) {
-        return
-      }
+      return
+    }
     for (cid in (cells.count-1)..0) {
       var cell = cells[cid]
-      Canvas.draw(cell.image, x + cell.x, y + cell.y)
+      cell.draw(x, y)
+    }
+  }
+
+  // draw cells including cropped out sections
+  drawFull(x, y) {
+    if (_format == CellFormat.oneImagePerCluster) {
+      Canvas.draw(_image, x, y)
+    } else {
+      draw(x, y)
     }
   }
 
@@ -339,6 +363,7 @@ class CellAnimationResource {
   clusters { _clusters }
   animations { _animations }
   background { _background }
+  backgroundImage { _backgroundImage }
   format { _format }
   findCluster(name) {
     for (cluster in clusters) {
@@ -361,6 +386,8 @@ class CellAnimationResource {
   newCluster() {
     return Cluster.new(_dir, _format)
   }
+
+  dir { _dir }
   
   construct new(file, dir) {
     _dir = dir
@@ -368,6 +395,10 @@ class CellAnimationResource {
     var document = XDocument.parse(FileSystem.load(file))
     var root = document.elementOrAbort("nitro_cell_animation_resource")
     _background = root.attributeValue("background")
+    if (_background != null) {
+      var bgFile = dir + "/" + _background
+      _backgroundImage = ImageData.load(bgFile)
+    }
     // decides whether to play the animation. if null or empty we should play all
     var play = root.attributeValue("play")
     var playAll = play == null || play == ""
