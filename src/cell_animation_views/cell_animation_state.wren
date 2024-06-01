@@ -136,6 +136,9 @@ class CellAnimationState {
       }
     } else {
       _clusterPanel.selectedCluster.drawFull(x, y)
+    }
+
+    if (_currentPanel == _clusterPanel) {
       if (_clusterPanel.highlightSelectedCell) {
         var sc = _clusterPanel.selectedCell
         if (sc != null) {
@@ -144,9 +147,6 @@ class CellAnimationState {
           drawShadowBorder(0, 0, areaW, areaH, 0, 0, 0, 0)
         }
       }
-    }
-
-    if (_currentPanel == _clusterPanel) {
       var selectedCell = _clusterPanel.selectedCell
       for (cell in _clusterPanel.selectedCluster.cells) {
         Canvas.rect(x + cell.x, y + cell.y, cell.width, cell.height, (_clusterPanel.highlightSelectedCell && cell != selectedCell) ? AppColor.shadowGray : AppColor.shadowWhite)

@@ -64,7 +64,7 @@ class AppColor {
     __raisedBackground = Color.hex("#000000")
     __shadow = Color.hex("#00000060")
     __shadowWhite = Color.hex("#FFFFFF60")
-    __shadowGray = Color.hex("#BBBBBB60")
+    __shadowGray = Color.hex("#AAAAAA60")
 
     __gamerPoints = [
       Color.hex("#8D3BFF"),
