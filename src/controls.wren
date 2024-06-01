@@ -208,7 +208,10 @@ class ListView {
   }
 
   deleteSelected() {
-    return items.removeAt(selectedIndex)
+    var removed = items.removeAt(selectedIndex)
+    if (selectedIndex >= items.count) {
+      selectedIndex = selectedIndex - 1
+    }
   }
 
   update() {
