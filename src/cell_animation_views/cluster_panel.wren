@@ -137,7 +137,14 @@ class ClusterPanel {
         _clustersList.moving = true
       },
       "Delete": Fn.new {
-        _clustersList.deleteSelected()
+        var deleted = _clustersList.deleteSelected()
+        for (anim in _res.animations) {
+          for (frame in anim.frames) {
+            if (frame.cluster == deleted) {
+              frame.cluster = null
+            }
+          }
+        }
         _state = "list"
       },
       "Duplicate": Fn.new {

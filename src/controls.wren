@@ -218,6 +218,7 @@ class ListView {
     if (selectedIndex >= items.count) {
       selectedIndex = selectedIndex - 1
     }
+    return removed
   }
 
   update() {
