@@ -10,6 +10,8 @@ import "cell_animation_views/animation_panel" for AnimationPanel
 
 class CellAnimationState {
   construct new(dir, animationFile) {
+    _dir = dir
+    _animationFile = animationFile
     _drawBackground = true
     _cellAnimationResource = CellAnimationResource.new(animationFile, dir)
     _animationPanel = AnimationPanel.new(_cellAnimationResource)
@@ -19,7 +21,14 @@ class CellAnimationState {
     _updateCounter = 0
   }
 
+  save() {
+    _cellAnimationResource.save(_animationFile + ".test.xml")
+  }
+
   update() {
+    if (Keyboard["q"].justPressed) {
+      save()
+    }
     _cellAnimationResource.update()
     if (Hotkey["toggleAllAnimations"].justPressed) {
       _all = !_all

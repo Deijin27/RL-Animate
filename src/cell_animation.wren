@@ -4,7 +4,7 @@ Load cell animations from xml document
 
 */
 
-import "xsequence" for XDocument
+import "xsequence" for XDocument, XElement, XAttribute
 import "io" for FileSystem
 import "util" for StringUtil
 import "graphics" for ImageData, Canvas
@@ -90,6 +90,10 @@ class Cell {
     updateImage()
   }
 
+  // byte
+  palette { _palette }
+  palette=(v) { _palette = v }
+
   size { CellSize.get(width, height) }
   size=(v) {
     _width = v.width
@@ -121,6 +125,8 @@ class Cell {
     updateImage()
   }
 
+  doubleSize { _doubleSize }
+
   image { _image }
 
   format { _format }
@@ -146,6 +152,7 @@ class Cell {
     _flipX = element.attributeValue("flip_x", Bool, false)
     _flipY = element.attributeValue("flip_y", Bool, false)
     _doubleSize = element.attributeValue("double_size", Bool, false)
+    _palette = element.attributeValue("palette", Num, 0)
     
     if (_format == CellFormat.oneImagePerCell) {
       _file = element.attributeValue("file", String)
@@ -158,6 +165,36 @@ class Cell {
       size = CellSize.validSizes[0]
     }
     updateImage()
+  }
+
+  serialise() {
+    var element = XElement.new("cell",
+      XAttribute.new("x", x),
+      XAttribute.new("y", y)
+    )
+
+    if (width > 0) {
+      element.add(XAttribute.new("width", width))
+    }
+    if (height > 0) {
+      element.add(XAttribute.new("height", height))
+    }
+    if (file != null && file != "") {
+      element.add(XAttribute.new("file", file))
+    }
+    if (palette != 0) {
+      element.add(XAttribute.new("palette", palette))
+    }
+    if (flipX) {
+      element.add(XAttribute.new("flip_x", flipX))
+    }
+    if (flipY) {
+      element.add(XAttribute.new("flip_y", flipY))
+    }
+    if (doubleSize) {
+      element.add(XAttribute.new("double_size", doubleSize))
+    }
+    return element
   }
 
   construct new(image, dir, format) {
@@ -239,6 +276,21 @@ class Cluster {
     _cells = element.elements("cell").map {|x| Cell.new(x, _image, dir, format) }.toList
   }
 
+  serialise() {
+    var element = XElement.new("cluster", 
+      XAttribute.new("name", name)
+      )
+    
+    if (file != null && file != "") {
+      element.add(XAttribute.new("file", file))
+    }
+    for (cell in cells) {
+      element.add(cell.serialise())
+    }
+    return element
+    
+  }
+
   loadImage() {
     _image = ImageData.load(_dir  + "/" + _file)
   }
@@ -301,6 +353,13 @@ class Frame {
     _duration = element.attributeValue("duration", Num)
   }
 
+  serialise() {
+    return XElement.new("frame",
+      XAttribute.new("cluster", cluster.name),
+      XAttribute.new("duration", duration)
+    )
+  }
+
   construct new() {
     _cluster = null
     _duration = 1
@@ -326,6 +385,14 @@ class Animation {
     // frames with zero duration are ignored
     _frames = element.elements("frame").map {|x| Frame.new(x, clusters) }.toList.where{|x| x.duration > 0 }.toList
     reset()
+  }
+
+  serialise() {
+    var element = XElement.new("animation", XAttribute.new("name", name))
+    for (frame in _frames) {
+      element.add(frame.serialise())
+    }
+    return element
   }
 
   construct new() {
@@ -405,6 +472,7 @@ class CellAnimationResource {
   dir { _dir }
   
   construct new(file, dir) {
+    _file = file
     _dir = dir
     Log.debug("Loading animation file '%(file)'")
     var document = XDocument.parse(FileSystem.load(file))
@@ -435,6 +503,33 @@ class CellAnimationResource {
         _animations.add(anim)
       }
     }
+  }
+
+  serialise() {
+    var cellElem = XElement.new("cell_collection")
+    for (c in clusters) {
+      cellElem.add(c.serialise())
+    }
+    cellElem.add(XAttribute.new("format", format))
+
+    var animElem = XElement.new("animation_collection")
+    for (a in animations) {
+      animElem.add(a.serialise())
+    }
+
+    var root = XElement.new("nitro_cell_animation_resource")
+    if (background != null && background != "") {
+      root.add(XAttribute.new("background", background))
+    }
+
+    root.add(cellElem)
+    root.add(animElem)
+    return XDocument.new(root)
+  }
+
+  save(file) {
+    var doc = serialise()
+    FileSystem.save(file, doc.toString)
   }
 
   update() {
