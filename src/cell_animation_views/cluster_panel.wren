@@ -4,7 +4,7 @@ import "io" for FileSystem
 import "cell_animation" for CellAnimationResource, CellFormat, Animation, Frame, Cell, Cluster, CellSize
 import "dome" for Process, Window, Log
 import "controls" for Form, Field, AppColor, Button, AppFont, ListView, Hotkey, Menu, TextInputDialog
-import "math" for Math
+import "math" for Math, Vector
 import "util" for FileUtil
 
 class ClusterPanel {
@@ -50,7 +50,7 @@ class ClusterPanel {
       Canvas.print(item.name, x, y, AppColor.foreground)
     }
     _cellsList = ListView.new("CELLS", []) {|item, x, y| 
-      Canvas.print("[%(item.x),%(item.y),%(item.width),%(item.height)]", x, y, AppColor.foreground)
+      Canvas.print("(%(item.x),%(item.y)) %(item.width)x%(item.height)", x, y, AppColor.foreground)
     }
     _cellsList.isFocused = false
     initCellForm()
@@ -193,19 +193,30 @@ class ClusterPanel {
   initCellForm() {
     var cellFields = []
 
-    cellFields.add(Field.number()
-      .withName("X")
-      .withGetter {|m| m.x }
-      .withSetter {|m, v| m.x = v }
-      .withMin(-100)
-      )
+    cellFields.add(Field.vector()
+      .withName("XY")
+      .withGetter {|m| Vector.new(m.x, m.y) }
+      .withSetter {|m, v| 
+        m.x = v.x
+        m.y = v.y
+      }
+      .withMinX(-100)
+      .withMinY(-100)
+    )
 
-    cellFields.add(Field.number()
-      .withName("Y")
-      .withGetter {|m| m.y }
-      .withSetter {|m, v| m.y = v }
-      .withMin(-100)
-      )
+    // cellFields.add(Field.number()
+    //   .withName("X")
+    //   .withGetter {|m| m.x }
+    //   .withSetter {|m, v| m.x = v }
+    //   .withMin(-100)
+    //   )
+
+    // cellFields.add(Field.number()
+    //   .withName("Y")
+    //   .withGetter {|m| m.y }
+    //   .withSetter {|m, v| m.y = v }
+    //   .withMin(-100)
+    //   )
 
     if (_res.format == CellFormat.oneImagePerCluster) {
       cellFields.add(Field.selector()
@@ -302,7 +313,7 @@ class ClusterPanel {
   }
 
   updateCellFocused() {
-    if (Hotkey["navigateBack"].justPressed) {
+    if (!_cellForm.selectedItem.captureFocus && Hotkey["navigateBack"].justPressed) {
       _cellForm.isFocused = false
       _cellsList.isFocused = true
     } else {

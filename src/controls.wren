@@ -1,7 +1,7 @@
 import "graphics" for Canvas, Color, Font
 import "input" for Mouse, Keyboard
 import "dome" for Log
-import "math" for Math
+import "math" for Math, Vector
 
 class Hotkey {
   construct new(name, key) {
@@ -490,6 +490,9 @@ class Field {
   model { _model }
   model=(v) { _model = v }
 
+  captureFocus { _captureFocus }
+  captureFocus=(v) { _captureFocus = v }
+
   name { _name }
   withName(v) { 
     _name = v 
@@ -534,13 +537,14 @@ class Field {
   }
 
   draw(x, y) {
-    Canvas.print(name, x, y, AppColor.foreground)
-    Canvas.print(getValueString(), x + 40, y, AppColor.foreground)
+    Canvas.print(name, x, y, captureFocus ? AppColor.gamer : AppColor.foreground)
+    Canvas.print(getValueString(), x + 40, y, captureFocus ? AppColor.gamer : AppColor.foreground)
   }
 
   static selector() { SelectorField.new() }
   static number() { NumField.new() }
   static bool() { BoolField.new() }
+  static vector() { VectorField.new() }
 }
 
 class SelectorField is Field {
@@ -686,19 +690,108 @@ class NumField is Field {
       newValue = currentValue + 1
     }
 
-    newValue = coerceValue(newValue)
+    newValue = Math.clamp(newValue, min, max)
     setValue(newValue)
   }
+}
 
-  coerceValue(value) {
-    if (value < min) {
-      return min
-    } else if (value > max) {
-      return max
-    } else {
-      return value
-    }
+class VectorField is Field {
+  construct new() {
+    _minX = 0
+    _minY = 0
+    _maxX = 1000
+    _maxY = 1000
   }
+
+  update() {
+    super.update()
+
+    if (model == null) {
+      return
+    }
+
+    if (captureFocus && Hotkey["navigateBack"].justPressed) {
+      captureFocus = false
+      return
+    }
+
+    if (!captureFocus) {
+      if (Hotkey["navigateForward"].justPressed) {
+        captureFocus = true
+      }
+      return
+    }
+
+    var currentValue = getValue()
+    if (!(currentValue is Vector)) {
+      Fiber.abort("Value of vector field should be Vector, but is '%(currentValue.type)'")
+    }
+    var x = currentValue.x
+    var y = currentValue.y
+
+    var leftRepeats = Hotkey["left"].repeats
+    var rightRepeats = Hotkey["right"].repeats
+    var upRepeats = Hotkey["up"].repeats
+    var downRepeats = Hotkey["down"].repeats
+
+    if (leftRepeats > 20) {
+      if (leftRepeats % 5 == 0) {
+        x = x - 1
+      }
+    } else if (rightRepeats > 20) {
+      if (rightRepeats % 5 == 0) {
+        x = x + 1
+      }
+    } else if (upRepeats > 20) {
+      if (upRepeats % 5 == 0) {
+        y = y - 1
+      }
+    } else if (downRepeats > 20) {
+      if (downRepeats % 5 == 0) {
+        y = y + 1
+      }
+    } else if (Hotkey["left"].justPressed) {
+      x = x - 1
+    } else if (Hotkey["right"].justPressed) {
+      x = x + 1
+    } else if (Hotkey["up"].justPressed) {
+      y = y - 1
+    } else if (Hotkey["down"].justPressed) {
+      y = y + 1
+    }
+
+    x = Math.clamp(x, minX, maxX)
+    y = Math.clamp(y, minY, maxY) 
+    var newValue = Vector.new(x, y)
+    setValue(newValue)
+
+  }
+
+  minX { _minX }
+  withMinX(v) { 
+    _minX = v
+    return this
+  }
+
+  maxX { _maxX }
+  withMaxX(v) { 
+    _maxX = v
+    return this
+  }
+
+  minY { _minY }
+  withMinY(v) { 
+    _minY = v
+    return this
+  }
+
+  maxY { _maxY }
+  withMaxY(v) { 
+    _maxY = v
+    return this
+  }
+
+  
 }
 
 class Form is ListView {
@@ -708,9 +801,13 @@ class Form is ListView {
   }
 
   update() {
-    super.update()
-
     var si = selectedItem
+
+    if (!si.captureFocus) {
+      super.update()
+    }
+
+    si = selectedItem
     if (si != null) {
       si.update()
     }
