@@ -224,6 +224,31 @@ class ClusterPanel {
       cellFields.add(_fileField)
     }
 
+    cellFields.add(Field.number()
+      .withName("Palette")
+      .withGetter {|m| m.palette }
+      .withSetter {|m, v| m.palette = v }
+      .withMax(255)
+      )
+
+    cellFields.add(Field.bool()
+      .withName("FlipX")
+      .withGetter {|m| m.flipX }
+      .withSetter {|m, v| m.flipX = v }
+      )
+
+    cellFields.add(Field.bool()
+      .withName("FlipY")
+      .withGetter {|m| m.flipY }
+      .withSetter {|m, v| m.flipY = v }
+      )
+
+    cellFields.add(Field.bool()
+      .withName("DoubleSize")
+      .withGetter {|m| m.doubleSize }
+      .withSetter {|m, v| m.doubleSize = v }
+      )
+
     _cellForm = Form.new("CELL", cellFields)
     _cellForm.width = 80
     _cellForm.isFocused = false

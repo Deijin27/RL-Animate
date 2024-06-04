@@ -539,7 +539,8 @@ class Field {
   }
 
   static selector() { SelectorField.new() }
-  static number() { NumberField.new() }
+  static number() { NumField.new() }
+  static bool() { BoolField.new() }
 }
 
 class SelectorField is Field {
@@ -562,6 +563,10 @@ class SelectorField is Field {
 
   update() {
     super.update()
+
+    if (model == null) {
+      return
+    }
 
     var currentValue = getValue()
     var currentIndex = _items.indexOf(currentValue)
@@ -604,7 +609,36 @@ class SelectorField is Field {
   }
 }
 
-class NumberField is Field {
+class BoolField is Field {
+  construct new() {
+  }
+
+  update() {
+    super.update()
+
+    if (model == null) {
+      return
+    }
+
+    var currentValue = getValue()
+    if (!(currentValue is Bool)) {
+      Fiber.abort("Value of boolean field should be Bool, but is '%(currentValue.type)'")
+    }
+
+    var newValue = currentValue
+
+    if (Hotkey["left"].justPressed) {
+      newValue = false
+    } else if (Hotkey["right"].justPressed) {
+      newValue = true
+    }
+
+    setValue(newValue)
+
+  }
+}
+
+class NumField is Field {
   construct new() {
     _min = 0
     _max = 1000
