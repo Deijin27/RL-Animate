@@ -165,7 +165,7 @@ class ListView {
     _scrollWrap = true
     _spacing = 12
     _moving = false
-    _width = 50
+    _width = 60
   }
   width { _width }
   width=(v) { _width = v }

@@ -24,8 +24,8 @@ class AnimationPanel {
 
   draw(x, y) {
     _animationsList.draw(x, y)
-    _framesList.draw(x + 65, y)
-    _framesForm.draw(x + 130, y)
+    _framesList.draw(x + 75, y)
+    _framesForm.draw(x + 150, y)
     if (_menu != null || _textDialog != null) {
       Canvas.rectfill(x - 20, y - 4, 400, 200, AppColor.shadow)
     }

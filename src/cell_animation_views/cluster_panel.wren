@@ -23,14 +23,14 @@ class ClusterPanel {
     _clustersList.draw(x, y)
 
     var cellsListY = y
-    var clusterInfoX = x + 65
+    var clusterInfoX = x + 75
     if (_res.format == CellFormat.oneImagePerCluster) {
       // cellsListY = cellsListY + 20
       // _clusterInfo.draw(clusterInfoX, y)
     }
     _cellsList.draw(clusterInfoX, cellsListY)
 
-    _cellForm.draw(clusterInfoX + 65, y)
+    _cellForm.draw(clusterInfoX + 75, y)
 
     if (_menu != null || _textDialog != null) {
       Canvas.rectfill(x - 20, y - 4, 400, 200, Color.hex("#00000060"))
@@ -50,7 +50,7 @@ class ClusterPanel {
       Canvas.print(item.name, x, y, AppColor.foreground)
     }
     _cellsList = ListView.new("CELLS", []) {|item, x, y| 
-      Canvas.print("(%(item.x),%(item.y)) %(item.width)x%(item.height)", x, y, AppColor.foreground)
+      Canvas.print("(%(item.x), %(item.y)) %(item.width)x%(item.height)", x, y, AppColor.foreground)
     }
     _cellsList.isFocused = false
     initCellForm()
