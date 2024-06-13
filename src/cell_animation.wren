@@ -126,6 +126,10 @@ class Cell {
   }
 
   doubleSize { _doubleSize }
+  doubleSize=(v) {
+    _doubleSize = v
+    updateImage()
+  }
 
   image { _image }
 
