@@ -265,7 +265,7 @@ class ClusterPanel {
     _cellForm.isFocused = false
   }
 
-  allowSwapPanel { !_cellForm.isFocused }
+  allowSwapPanel { !_cellForm.captureFocus }
 
   name { "CLUSTERS" }
 

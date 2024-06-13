@@ -525,6 +525,23 @@ class Field {
   }
 
   update() {
+    if (model == null) {
+      return false
+    }
+
+    if (captureFocus && Hotkey["navigateBack"].justPressed) {
+      captureFocus = false
+      return false
+    }
+
+    if (!captureFocus) {
+      if (Hotkey["navigateForward"].justPressed) {
+        captureFocus = true
+      }
+      return false
+    }
+
+    return true
   }
 
   getValueString() {
@@ -545,6 +562,7 @@ class Field {
   static number() { NumField.new() }
   static bool() { BoolField.new() }
   static vector() { VectorField.new() }
+  static readonly() { ReadonlyField.new() }
 }
 
 class SelectorField is Field {
@@ -566,10 +584,8 @@ class SelectorField is Field {
   }
 
   update() {
-    super.update()
-
-    if (model == null) {
-      return
+    if (!super.update()){
+      return false
     }
 
     var currentValue = getValue()
@@ -597,6 +613,8 @@ class SelectorField is Field {
     newIndex = coerceIndex(newIndex)
     var newValue = newIndex == -1 ? null : _items[newIndex]
     setValue(newValue)
+
+    return true
   }
   
   coerceIndex(index) {
@@ -618,10 +636,8 @@ class BoolField is Field {
   }
 
   update() {
-    super.update()
-
-    if (model == null) {
-      return
+    if (!super.update()){
+      return false
     }
 
     var currentValue = getValue()
@@ -639,6 +655,18 @@ class BoolField is Field {
 
     setValue(newValue)
 
+    return true
+
+  }
+}
+
+class ReadonlyField is Field {
+  construct new() {
+
+  }
+
+  update() {
+    return false
   }
 }
 
@@ -661,10 +689,8 @@ class NumField is Field {
   }
 
   update() {
-    super.update()
-
-    if (model == null) {
-      return
+    if (!super.update()){
+      return false
     }
 
     var currentValue = getValue()
@@ -692,6 +718,8 @@ class NumField is Field {
 
     newValue = Math.clamp(newValue, min, max)
     setValue(newValue)
+
+    return true
   }
 }
 
@@ -704,22 +732,8 @@ class VectorField is Field {
   }
 
   update() {
-    super.update()
-
-    if (model == null) {
-      return
-    }
-
-    if (captureFocus && Hotkey["navigateBack"].justPressed) {
-      captureFocus = false
-      return
-    }
-
-    if (!captureFocus) {
-      if (Hotkey["navigateForward"].justPressed) {
-        captureFocus = true
-      }
-      return
+    if (!super.update()){
+      return false
     }
 
     var currentValue = getValue()
@@ -765,6 +779,7 @@ class VectorField is Field {
     var newValue = Vector.new(x, y)
     setValue(newValue)
 
+    return true
   }
 
   minX { _minX }
@@ -799,6 +814,8 @@ class Form is ListView {
     super(title, fields, Fn.new {|item, x, y| item.draw(x, y) })
     _fields = fields
   }
+
+  captureFocus { selectedItem != null ? selectedItem.captureFocus : false }
 
   update() {
     var si = selectedItem

@@ -7,6 +7,7 @@ import "controls" for AppColor, Button, AppFont, ListView, Hotkey, Menu, TextInp
 import "math" for Math
 import "cell_animation_views/cluster_panel" for ClusterPanel
 import "cell_animation_views/animation_panel" for AnimationPanel
+import "cell_animation_views/settings_panel" for SettingsPanel
 
 class CellAnimationState {
   construct new(dir, animationFile) {
@@ -16,6 +17,8 @@ class CellAnimationState {
     _cellAnimationResource = CellAnimationResource.new(animationFile, dir)
     _animationPanel = AnimationPanel.new(_cellAnimationResource)
     _clusterPanel = ClusterPanel.new(_cellAnimationResource)
+    _settingsPanel = SettingsPanel.new(_cellAnimationResource)
+    _panels = [_animationPanel, _clusterPanel, _settingsPanel]
     _currentPanel = _animationPanel
     _all = true
     _updateCounter = 0
@@ -23,6 +26,17 @@ class CellAnimationState {
 
   save() {
     _cellAnimationResource.save(_animationFile + ".test.xml")
+  }
+
+  cyclePanel(change) {
+    var currentIndex = _panels.indexOf(_currentPanel)
+    currentIndex = currentIndex + change
+    if (currentIndex < 0) {
+      currentIndex = _panels.count - 1
+    } else if (currentIndex >= _panels.count) {
+      currentIndex = 0
+    }
+    _currentPanel = _panels[currentIndex]
   }
 
   update() {
@@ -36,11 +50,11 @@ class CellAnimationState {
     if (Hotkey["toggleBackground"].justPressed) {
       _drawBackground = !_drawBackground
     }
-    if (allowSwapPanel && (Hotkey["left"].justPressed || Hotkey["right"].justPressed)) {
-      if (_currentPanel == _animationPanel) {
-        _currentPanel = _clusterPanel
-      } else {
-        _currentPanel = _animationPanel
+    if (allowSwapPanel) {
+      if (Hotkey["left"].justPressed) {
+        cyclePanel(-1)
+      } else if (Hotkey["right"].justPressed) {
+        cyclePanel(1)
       }
     }
     _currentPanel.update()
