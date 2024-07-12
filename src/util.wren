@@ -32,10 +32,12 @@ class FileUtil {
         }
       }
     }
-    for (subDir in FileSystem.listDirectories(dir)) {
-      loadFilesRecursive(subDir, list, extensions)
+    var dirs = FileSystem.listDirectories(dir)
+    for (subDir in dirs) {
+      if (subDir == "." || subDir == "..") {
+        continue
+      }
+      loadFilesRecursive_(subDir, list, extensions)
     }
   }
-
-
 }
