@@ -481,9 +481,15 @@ class CellAnimationResource {
     Log.debug("Loading animation file '%(file)'")
     var document = XDocument.parse(FileSystem.load(file))
     var root = document.elementOrAbort("nitro_cell_animation_resource")
+    var version = root.attributeValue("version", Num)
+    if (version != 1) {
+      Fiber.abort("Unknown animation format version '%(version)'")
+    }
+
     _background = root.attributeValue("background")
     if (_background != null) {
       var bgFile = dir + "/" + _background
+      Log.debug("Loading background file '%(bgFile)'")
       _backgroundImage = ImageData.load(bgFile)
     }
     // decides whether to play the animation. if null or empty we should play all
