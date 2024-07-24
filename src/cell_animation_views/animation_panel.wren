@@ -246,7 +246,7 @@ class AnimationPanel {
   }
 
   updateFrameItemFocused() {
-    if (Hotkey["navigateBack"].justPressed) {
+    if (!_framesForm.selectedItem.captureFocus && Hotkey["navigateBack"].justPressed) {
       _framesForm.isFocused = false
       _framesList.isFocused = true
     } else {

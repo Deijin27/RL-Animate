@@ -815,7 +815,7 @@ class Form is ListView {
     _fields = fields
   }
 
-  captureFocus { selectedItem != null ? selectedItem.captureFocus : false }
+  captureFocus { selectedItem != null && selectedItem.captureFocus }
 
   update() {
     var si = selectedItem
