@@ -815,6 +815,8 @@ class Form is ListView {
     _fields = fields
   }
 
+  fields { _fields }
+
   captureFocus { selectedItem != null && selectedItem.captureFocus }
 
   update() {
@@ -835,6 +837,39 @@ class Form is ListView {
     _model = v
     for (f in _fields) {
       f.model = _model
+    }
+  }
+}
+
+class MergedListView {
+  construct new(lists) {
+    _lists = lists
+    for (list in _lists) {
+      list.scrollWrap = false
+    }
+    _selectedIndex = 0
+  }
+
+  selectedList { _lists[_selectedIndex] }
+
+  isFocused { selectedList.isFocused }
+  isFocused=(v) { selectedList.isFocused = v }
+
+  update() {
+    if (!isFocused) {
+      Fiber.abort("MergedListView should not be updated if not focused!")
+    }
+
+    if ((_selectedIndex + 1) < _lists.count && (selectedList.selectedIndex + 1) == selectedList.items.count  && (Hotkey["down"].justPressed || Hotkey["down"].repeats > 20)) {
+      selectedList.isFocused = false
+      _selectedIndex = _selectedIndex + 1
+      selectedList.isFocused = true
+    } else if (_selectedIndex > 0 && selectedList.selectedIndex == 0 && (Hotkey["up"].justPressed || Hotkey["up"].repeats > 20)) {
+      selectedList.isFocused = false
+      _selectedIndex = _selectedIndex - 1
+      selectedList.isFocused = true
+    } else {
+      selectedList.update()
     }
   }
 }

@@ -68,7 +68,7 @@ class CellAnimationState {
     drawImg(2, 2, areaW, areaH)
     drawTopBar(0, 124)
     _currentPanel.draw(10, 140)
-    drawBottomBar()
+    //drawBottomBar()
   }
 
   drawBottomBar() {

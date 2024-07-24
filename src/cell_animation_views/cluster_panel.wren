@@ -3,7 +3,7 @@ import "input" for Keyboard, Mouse
 import "io" for FileSystem
 import "cell_animation" for CellAnimationResource, CellFormat, Animation, Frame, Cell, Cluster, CellSize
 import "dome" for Process, Window, Log
-import "controls" for Form, Field, AppColor, Button, AppFont, ListView, Hotkey, Menu, TextInputDialog
+import "controls" for Form, Field, AppColor, Button, AppFont, ListView, Hotkey, Menu, TextInputDialog, MergedListView
 import "math" for Math, Vector
 import "util" for FileUtil
 
@@ -12,7 +12,7 @@ class ClusterPanel {
   update() {
     if (_clustersList.isFocused) {
       _clustersStateActions[_state].call()
-    } else if (_cellsList.isFocused) {
+    } else if (_middleColumn.isFocused) {
       _cellsStateActions[_state].call()
     } else {
      _cellStateActions[_state].call()
@@ -24,9 +24,9 @@ class ClusterPanel {
 
     var cellsListY = y
     var clusterInfoX = x + 75
-    if (_res.format == CellFormat.oneImagePerCluster) {
-      // cellsListY = cellsListY + 20
-      // _clusterInfo.draw(clusterInfoX, y)
+    if (_clusterForm != null) {
+      cellsListY = cellsListY + 12 + 12 * _clusterForm.fields.count
+      _clusterForm.draw(clusterInfoX, y)
     }
     _cellsList.draw(clusterInfoX, cellsListY)
 
@@ -53,7 +53,15 @@ class ClusterPanel {
       Canvas.print("(%(item.x), %(item.y)) %(item.width)x%(item.height)", x, y, AppColor.foreground)
     }
     _cellsList.isFocused = false
+
     initCellForm()
+
+    _middleColumn = _cellsList
+    if (_res.format == CellFormat.oneImagePerCluster) {
+      initClusterForm()
+      _mergedList = MergedListView.new([_clusterForm, _cellsList])
+      _middleColumn = _mergedList
+    }
     _state = "list"
 
     _clustersStateActions = {
@@ -190,6 +198,29 @@ class ClusterPanel {
     }
   }
 
+  initClusterForm() {
+    var clusterFields = []
+
+    _fileField = Field.selector()
+      .withName("File")
+      .withGetter {|m| m.file }
+      .withSetter {|m, v| m.file = v }
+      .withAllowNull(true)
+    updateFilesList()
+    clusterFields.add(_fileField)
+    
+    clusterFields.add(Field.number()
+      .withName("Palette")
+      .withGetter {|m| m.palette }
+      .withSetter {|m, v| m.palette = v }
+      .withMax(255)
+      )
+
+    _clusterForm = Form.new("CLUSTER", clusterFields)
+    _clusterForm.width = 80
+    _clusterForm.isFocused = false
+  }
+
   initCellForm() {
     var cellFields = []
 
@@ -203,20 +234,6 @@ class ClusterPanel {
       .withMinX(-100)
       .withMinY(-100)
     )
-
-    // cellFields.add(Field.number()
-    //   .withName("X")
-    //   .withGetter {|m| m.x }
-    //   .withSetter {|m, v| m.x = v }
-    //   .withMin(-100)
-    //   )
-
-    // cellFields.add(Field.number()
-    //   .withName("Y")
-    //   .withGetter {|m| m.y }
-    //   .withSetter {|m, v| m.y = v }
-    //   .withMin(-100)
-    //   )
 
     if (_res.format == CellFormat.oneImagePerCluster) {
       cellFields.add(Field.selector()
@@ -233,14 +250,14 @@ class ClusterPanel {
         .withAllowNull(true)
       updateFilesList()
       cellFields.add(_fileField)
-    }
 
-    cellFields.add(Field.number()
-      .withName("Palette")
-      .withGetter {|m| m.palette }
-      .withSetter {|m, v| m.palette = v }
-      .withMax(255)
-      )
+      cellFields.add(Field.number()
+        .withName("Palette")
+        .withGetter {|m| m.palette }
+        .withSetter {|m, v| m.palette = v }
+        .withMax(255)
+        )
+    }
 
     cellFields.add(Field.bool()
       .withName("FlipX")
@@ -282,14 +299,16 @@ class ClusterPanel {
       _menu = _clustersList.items.count == 0 ? Menu.new(["Add"]) : Menu.new(["Add", "Rename", "Move", "Delete", "Duplicate"])
       _state = "menu"
     } else if (_clustersList.items.count > 0 && Hotkey["navigateForward"].justPressed) {
-      _cellsList.isFocused = true
+      _middleColumn.isFocused = true
       _clustersList.isFocused = false
     } else {
       _clustersList.update()
       var sc = _clustersList.selectedItem
       if (sc != null) {
+        _clusterForm.model = sc
         _cellsList.items = sc.cells
       } else {
+        _clusterForm.model = null
         _cellsList.items = []
       }
       _cellForm.model = selectedCell
@@ -297,17 +316,17 @@ class ClusterPanel {
   }
 
   updateCellsFocused() {
-     if (Hotkey["menu"].justPressed) {
+     if (_cellsList.isFocused && Hotkey["menu"].justPressed) {
       _menu = _cellsList.items.count == 0 ? Menu.new(["Add"]) : Menu.new(["Add", "Move", "Delete", "Duplicate"])
       _state = "menu"
     } else if (Hotkey["navigateBack"].justPressed) {
-      _cellsList.isFocused = false
+      _middleColumn.isFocused = false
       _clustersList.isFocused = true
-    } else if (_cellsList.items.count > 0 && Hotkey["navigateForward"].justPressed) {
-      _cellsList.isFocused = false
+    } else if (_cellsList.isFocused && _cellsList.items.count > 0 && Hotkey["navigateForward"].justPressed) {
+      _middleColumn.isFocused = false
       _cellForm.isFocused = true
     } else {
-      _cellsList.update()
+      _middleColumn.update()
       _cellForm.model = selectedCell
     }
   }
@@ -315,7 +334,7 @@ class ClusterPanel {
   updateCellFocused() {
     if (!_cellForm.selectedItem.captureFocus && Hotkey["navigateBack"].justPressed) {
       _cellForm.isFocused = false
-      _cellsList.isFocused = true
+      _middleColumn.isFocused = true
     } else {
       updateFilesList()
       _cellForm.update()

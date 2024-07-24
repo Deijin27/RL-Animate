@@ -264,6 +264,11 @@ class Cluster {
       cell.originalImage = _image
     }
   }
+
+  // byte
+  palette { _palette }
+  palette=(v) { _palette = v }
+
   cells { _cells }
 
   toString { _name }
@@ -272,6 +277,7 @@ class Cluster {
     _dir = dir
     _format = format
     _name = element.attributeValue("name", String)
+    _palette = element.attributeValue("palette", Num, 0)
     _image = null
     if (format == CellFormat.oneImagePerCluster) {
       _file = element.attributeValue("file", String)
@@ -287,6 +293,9 @@ class Cluster {
     
     if (file != null && file != "") {
       element.add(XAttribute.new("file", file))
+    }
+    if (palette != 0) {
+      element.add(XAttribute.new("palette", palette))
     }
     for (cell in cells) {
       element.add(cell.serialise())
