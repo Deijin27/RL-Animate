@@ -23,23 +23,23 @@ class ClusterPanel {
     _clustersList.draw(x, y)
 
     var cellsListY = y
-    var clusterInfoX = x + 75
+    var clusterInfoX = x + 95
     if (_clusterForm != null) {
       cellsListY = cellsListY + 12 + 12 * _clusterForm.fields.count
       _clusterForm.draw(clusterInfoX, y)
     }
     _cellsList.draw(clusterInfoX, cellsListY)
 
-    _cellForm.draw(clusterInfoX + 75, y)
+    _cellForm.draw(clusterInfoX + 95, y)
 
     if (_menu != null || _textDialog != null) {
       Canvas.rectfill(x - 20, y - 4, 400, 200, Color.hex("#00000060"))
     }
     if (_menu != null) {
-      _menu.draw(220, 160)
+      _menu.draw(250, 175)
     }
     if (_textDialog != null) {
-      _textDialog.draw(200, 180)
+      _textDialog.draw(240, 175)
     }
   }
 
@@ -49,16 +49,19 @@ class ClusterPanel {
     _clustersList = ListView.new("CLUSTERS", _res.clusters) {|item, x, y| 
       Canvas.print(item.name, x, y, AppColor.foreground)
     }
+    _clustersList.width = 80
     _cellsList = ListView.new("CELLS", []) {|item, x, y| 
       Canvas.print("(%(item.x), %(item.y)) %(item.width)x%(item.height)", x, y, AppColor.foreground)
     }
     _cellsList.isFocused = false
+    _cellsList.width = 80
 
     initCellForm()
 
     _middleColumn = _cellsList
     if (_res.format == CellFormat.oneImagePerCluster) {
       initClusterForm()
+      _cellsList.visibleItemCapacity = 4
       _mergedList = MergedListView.new([_clusterForm, _cellsList])
       _middleColumn = _mergedList
     }

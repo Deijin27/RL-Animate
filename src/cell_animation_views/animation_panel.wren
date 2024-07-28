@@ -24,16 +24,16 @@ class AnimationPanel {
 
   draw(x, y) {
     _animationsList.draw(x, y)
-    _framesList.draw(x + 75, y)
-    _framesForm.draw(x + 150, y)
+    _framesList.draw(x + 95, y)
+    _framesForm.draw(x + 190, y)
     if (_menu != null || _textDialog != null) {
       Canvas.rectfill(x - 20, y - 4, 400, 200, AppColor.shadow)
     }
     if (_menu != null) {
-      _menu.draw(220, 160)
+      _menu.draw(250, 175)
     }
     if (_textDialog != null) {
-      _textDialog.draw(200, 180)
+      _textDialog.draw(240, 175)
     }
   }
 
@@ -44,11 +44,13 @@ class AnimationPanel {
     _animationsList = ListView.new("ANIMATIONS", _res.animations) {|item, x, y| 
       Canvas.print(item.name, x, y, AppColor.foreground)
     }
+    _animationsList.width = 80
     _framesList = ListView.new("FRAMES", []) {|item, x, y|
       var clust = item.cluster
       Canvas.print(clust == null ? "---" : clust, x, y, AppColor.foreground)
       Canvas.print(item.duration.toString, x + 40, y, AppColor.foreground)
     }
+    _framesList.width = 80
 
     var clusterField = Field.selector()
       .withName("Cluster")

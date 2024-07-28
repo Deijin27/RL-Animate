@@ -160,13 +160,15 @@ class ListView {
     _selectedIndex = 0
     _isFocused = true
     _drawItemFn = drawItemFn
-    _visibleItemCapacity = 6
+    _visibleItemCapacity = 7
     _scrollPosition = 0
     _scrollWrap = true
     _spacing = 12
     _moving = false
     _width = 60
   }
+  visibleItemCapacity { _visibleItemCapacity }
+  visibleItemCapacity=(v) { _visibleItemCapacity = v }
   width { _width }
   width=(v) { _width = v }
   scrollWrap { _scrollWrap }
