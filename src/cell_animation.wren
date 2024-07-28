@@ -233,6 +233,10 @@ class Cell {
   }
 
   updateImage() {
+    if (_originalImage == null) {
+      _image = null
+      return
+    }
     var transform = {}
     if (_format == CellFormat.oneImagePerCell) {
       if (_doubleSize) {
@@ -249,6 +253,9 @@ class Cell {
   }
 
   draw(x, y) {
+    if (image == null) {
+      return
+    }
     Canvas.draw(image, x + this.x, y + this.y)
   }
 }
@@ -280,7 +287,7 @@ class Cluster {
     _palette = element.attributeValue("palette", Num, 0)
     _image = null
     if (format == CellFormat.oneImagePerCluster) {
-      _file = element.attributeValue("file", String)
+      _file = element.attributeValue("file")
       loadImage()
     }
     _cells = element.elements("cell").map {|x| Cell.new(x, _image, dir, format) }.toList
@@ -305,6 +312,10 @@ class Cluster {
   }
 
   loadImage() {
+    if (_file == null) {
+      _image = null
+      return
+    }
     _image = ImageData.load(_dir  + "/" + _file)
   }
 

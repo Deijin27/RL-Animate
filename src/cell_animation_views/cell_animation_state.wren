@@ -171,8 +171,11 @@ class CellAnimationState {
         }
       }
       var selectedCell = _clusterPanel.selectedCell
-      for (cell in _clusterPanel.selectedCluster.cells) {
-        Canvas.rect(x + cell.x, y + cell.y, cell.width, cell.height, (_clusterPanel.highlightSelectedCell && cell != selectedCell) ? AppColor.shadowGray : AppColor.shadowWhite)
+      var selectedCluster = _clusterPanel.selectedCluster
+      if (selectedCluster != null) {
+        for (cell in selectedCluster.cells) {
+          Canvas.rect(x + cell.x, y + cell.y, cell.width, cell.height, (_clusterPanel.highlightSelectedCell && cell != selectedCell) ? AppColor.shadowGray : AppColor.shadowWhite)
+        }
       }
     }
   }

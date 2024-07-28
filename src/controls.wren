@@ -573,6 +573,9 @@ class SelectorField is Field {
 
   items { _items }
   withItems(v) { 
+    if (v == null) {
+      Fiber.abort("items was null")
+    }
     _items = v
     return this
   }
@@ -586,6 +589,10 @@ class SelectorField is Field {
   update() {
     if (!super.update()){
       return false
+    }
+
+    if (_items == null) {
+      Fiber.abort("Update called in Selector control '%(name)' before items is initialised")
     }
 
     var currentValue = getValue()

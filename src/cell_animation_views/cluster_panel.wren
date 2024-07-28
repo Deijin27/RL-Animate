@@ -282,7 +282,7 @@ class ClusterPanel {
     _cellForm.isFocused = false
   }
 
-  allowSwapPanel { !_cellForm.captureFocus }
+  allowSwapPanel { !_cellForm.captureFocus && !_clusterForm.captureFocus }
 
   name { "CLUSTERS" }
 
@@ -301,6 +301,8 @@ class ClusterPanel {
     } else if (_clustersList.items.count > 0 && Hotkey["navigateForward"].justPressed) {
       _middleColumn.isFocused = true
       _clustersList.isFocused = false
+    } else if (Hotkey["delete"].justPressed) {
+      _clusterMenuActions["Delete"].call()
     } else {
       _clustersList.update()
       var sc = _clustersList.selectedItem
@@ -319,24 +321,31 @@ class ClusterPanel {
      if (_cellsList.isFocused && Hotkey["menu"].justPressed) {
       _menu = _cellsList.items.count == 0 ? Menu.new(["Add"]) : Menu.new(["Add", "Move", "Delete", "Duplicate"])
       _state = "menu"
-    } else if (Hotkey["navigateBack"].justPressed) {
+    } else if ((_clusterForm == null || !_clusterForm.captureFocus) && Hotkey["navigateBack"].justPressed) {
       _middleColumn.isFocused = false
       _clustersList.isFocused = true
     } else if (_cellsList.isFocused && _cellsList.items.count > 0 && Hotkey["navigateForward"].justPressed) {
       _middleColumn.isFocused = false
       _cellForm.isFocused = true
+    } else if (Hotkey["delete"].justPressed) {
+      _cellMenuActions["Delete"].call()
     } else {
+      if (_res.format == CellFormat.oneImagePerCluster) {
+        updateFilesList()
+      }  
       _middleColumn.update()
       _cellForm.model = selectedCell
     }
   }
 
   updateCellFocused() {
-    if (!_cellForm.selectedItem.captureFocus && Hotkey["navigateBack"].justPressed) {
+    if (!_cellForm.captureFocus && Hotkey["navigateBack"].justPressed) {
       _cellForm.isFocused = false
       _middleColumn.isFocused = true
     } else {
-      updateFilesList()
+      if (_res.format == CellFormat.oneImagePerCell) {
+        updateFilesList() 
+      }
       _cellForm.update()
     }
   }

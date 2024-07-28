@@ -20,7 +20,7 @@ class FileUtil {
   }
 
   static loadImagesRecursive(dir) {
-    loadFilesRecursive(dir, [".png"])
+    return loadFilesRecursive(dir, [".png"])
   }
 
   static loadFilesRecursive_(dir, list, extensions) {
