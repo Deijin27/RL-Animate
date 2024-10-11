@@ -285,7 +285,7 @@ class ClusterPanel {
     _cellForm.isFocused = false
   }
 
-  allowSwapPanel { !_cellForm.captureFocus && !_clusterForm.captureFocus }
+  allowSwapPanel { !_cellForm.captureFocus && (_clusterForm == null || !_clusterForm.captureFocus) }
 
   name { "CLUSTERS" }
 
@@ -310,10 +310,14 @@ class ClusterPanel {
       _clustersList.update()
       var sc = _clustersList.selectedItem
       if (sc != null) {
-        _clusterForm.model = sc
+        if (_clusterForm != null) {
+          _clusterForm.model = sc
+        }
         _cellsList.items = sc.cells
       } else {
-        _clusterForm.model = null
+        if (_clusterForm != null) {
+          _clusterForm.model = null
+        }
         _cellsList.items = []
       }
       _cellForm.model = selectedCell
