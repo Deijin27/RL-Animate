@@ -177,11 +177,13 @@ class Cell {
       XAttribute.new("y", y)
     )
 
-    if (width > 0) {
-      element.add(XAttribute.new("width", width))
-    }
-    if (height > 0) {
-      element.add(XAttribute.new("height", height))
+    if (_format == CellFormat.oneImagePerCluster) {
+      if (width > 0) {
+        element.add(XAttribute.new("width", width))
+      }
+      if (height > 0) {
+        element.add(XAttribute.new("height", height))
+      }
     }
     if (file != null && file != "") {
       element.add(XAttribute.new("file", file))
