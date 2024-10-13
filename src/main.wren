@@ -26,7 +26,7 @@ class Main {
   construct new() { }
   
   init() {
-    Window.title = "RL-Animate v1.0"
+    Window.title = "RL-Animate 1.0-beta1"
     AppFont.load()
 
     Hotkey.register("up", "up")
