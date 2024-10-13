@@ -83,7 +83,7 @@ class CellAnimationState {
 
   drawBackground(areaW, areaH) {
     //Canvas.rectfill(0, 124, 600, 200, Color.hex("#817bb7"))
-    var gridPos = 0 - (_updateCounter / 7) % 7 
+    var gridPos = 0 //- (_updateCounter / 7) % 7 
     drawGrid(gridPos, areaH, areaW, 200, 7, Color.hex("#585289"), Color.hex("#3c3768"))
     drawCheckerboard(0, 0, areaW, areaH, 6, Color.black, Color.hex("#101010"))
     //Canvas.line(6, 0, 6, 124, Color.red)
