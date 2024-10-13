@@ -503,8 +503,8 @@ class CellAnimationResource {
     Log.debug("Loading animation file '%(file)'")
     var document = XDocument.parse(FileSystem.load(file))
     var root = document.elementOrAbort("nitro_cell_animation_resource")
-    var version = root.attributeValue("version", Num)
-    if (version != 1) {
+    _version = root.attributeValue("version", Num)
+    if (_version != 1) {
       Fiber.abort("Unknown animation format version '%(version)'")
     }
 
@@ -548,6 +548,7 @@ class CellAnimationResource {
     }
 
     var root = XElement.new("nitro_cell_animation_resource")
+    root.add(XAttribute.new("version", _version))
     if (background != null && background != "") {
       root.add(XAttribute.new("background", background))
     }
