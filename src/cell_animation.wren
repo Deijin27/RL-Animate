@@ -529,9 +529,7 @@ class CellAnimationResource {
     // animations without frames are ignored
     _animations = []
     for (anim in root.elementOrAbort("animation_collection").elements("animation").map{|x| Animation.new(x, _clusters)}) {
-      if (anim.frames.count > 0 && (playAll || play == anim.name)) {
-        _animations.add(anim)
-      }
+      _animations.add(anim)
     }
   }
 
