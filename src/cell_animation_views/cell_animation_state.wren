@@ -25,7 +25,7 @@ class CellAnimationState {
   }
 
   save() {
-    _cellAnimationResource.save(_animationFile + ".test.xml")
+    _cellAnimationResource.save(_animationFile)
   }
 
   cyclePanel(change) {
