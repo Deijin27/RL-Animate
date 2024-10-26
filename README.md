@@ -20,13 +20,13 @@ Preview animations exported by RanseiLink
 1. In the same folder with the .exe put a folder, this folder should contain your .xml animation file, along with all it's associated files
 1. Launch the .exe
 1. Controls:
-  - Left and right arrow keys swap you between tabs
-  - The X key acts as "Ok", kinda like A on a controller, and the Z key is "Back", kinda like B on a controller.
-  - Go into edit move on a value with the X key, then use arrow keys to edit the value, Z exits edit mode.
-  - Open context menu for more actions on list items with the S key.
-  - Swap between displaying all animations at once, and only the selected animation with the A key
-  - Save changes to the file with the Q key.
-  - All controls subject to change.
+    - Left and right arrow keys swap you between tabs
+    - The X key acts as "Ok", kinda like A on a controller, and the Z key is "Back", kinda like B on a controller.
+    - Go into edit move on a value with the X key, then use arrow keys to edit the value, Z exits edit mode.
+    - Open context menu for more actions on list items with the S key.
+    - Swap between displaying all animations at once, and only the selected animation with the A key
+    - Save changes to the file with the Q key.
+    - All controls subject to change.
 
 ![leafeon screenshot](https://user-images.githubusercontent.com/40903783/189527807-3fd42418-f0b7-42dc-92ba-8a74cc4fa6f6.gif)
 
